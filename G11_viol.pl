@@ -3,7 +3,8 @@
 use lib '/home/mta/PERL';
 use Statistics::Descriptive::Discrete;
 
-$infile="/data/mta4/space_weather/G11pchan";
+#$infile="/data/mta4/space_weather/G11pchan";
+$infile="/data/mta4/space_weather/G11returned";
 $P2_lim=300.0/3.3;
 $P5_lim=8.47/12.0;
 
