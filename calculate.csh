@@ -38,6 +38,7 @@ set WAPdir=/data/mta4/www/WL
 
 #sec set file = ftp://solar.sec.noaa.gov/pub/lists/ace/ace_epam_5m.txt
 #set file = ftp://www.sec.noaa.gov/pub/lists/ace/ace_epam_5m.txt
+#set file = ftp://ftp.sec.noaa.gov/pub/lists/ace/ace_epam_5m.txt
 set file = http://sec.noaa.gov/ftpdir/lists/ace/ace_epam_5m.txt
 
 rm $SPACE_Wdir/returned

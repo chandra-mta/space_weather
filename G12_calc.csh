@@ -16,6 +16,7 @@ set WEBdir=/data/mta4/www
 #set file = gopher://www.sec.noaa.gov:70/00/lists/particle/G12part_5m
 #set file = gopher://www.sec.noaa.gov:70/00/lists/pchan/G12pchan_5m.txt
 #set file = http://www.sec.noaa.gov/ftpdir/lists/pchan/G12pchan_5m.txt
+#set file = ftp://ftp.sec.noaa.gov/pub/lists/pchan/G12pchan_5m.txt
 set file = http://www.sec.noaa.gov/ftpdir/lists/pchan/G12pchan_5m.txt
 
 /opt/local/bin/lynx -source $file >! $SPACE_Wdir/G12returned1

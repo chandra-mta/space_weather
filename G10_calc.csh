@@ -20,6 +20,7 @@ set WEBdir=/data/mta4/www
 #set file = gopher://www.sec.noaa.gov:70/00/lists/particle/G10part_5m
 #set file = gopher://www.sec.noaa.gov:70/00/lists/pchan/G10pchan_5m.txt
 #set file = http://www.sec.noaa.gov/ftpdir/lists/pchan/G10pchan_5m.txt
+#set file = ftp://ftp.sec.noaa.gov/pub/lists/pchan/G10pchan_5m.txt
 set file = http://www.sec.noaa.gov/ftpdir/lists/pchan/G10pchan_5m.txt
 
 #/opt/local/bin/lynx -source $file
