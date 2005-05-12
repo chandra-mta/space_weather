@@ -76,6 +76,10 @@ if ($count > 28) then
 /opt/local/bin/convert -negate $WEBdir/mta_ace_plot.gif $WEBdir/Epam_7di.gif
 /opt/local/bin/convert -negate $WEBdir/mta_ace_plot_P3.gif $WEBdir/Epam_7di_P3.gif
 
+# get wind speed etc. plot
+/opt/local/bin/lynx -source http://www.sec.noaa.gov/ace/Mag_swe_7d.gif >!  $WEBdir/Mag_swe_7d.gif
+/opt/local/bin/convert -negate $WEBdir/Mag_swe_7d.gif $WEBdir/Mag_swe_7di.gif
+
 #go and collect Kp image 
 /opt/local/bin/lynx -source http://www.sec.noaa.gov/rpc/costello/pkp_15m_7d.html | tail -9 | head -1 > ! $SPACE_Wdir/tmpkp
 sed s/'<CENTER><IMG SRC="'/''/1 $SPACE_Wdir/tmpkp | sed s/'"><'/' '/1 | sed s/'\/CENTER>'/''/1 >! $SPACE_Wdir/kpimagename
