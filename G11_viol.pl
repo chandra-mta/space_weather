@@ -60,8 +60,8 @@ if ($time_diff < 1200 && ($p2_med > $P2_lim || $p5_med > $P5_lim)) {
       printf OUT " Limit: %6.2f\n", $P5_lim;
     }
     close OUT;
-    `cat $lockfile | mailx -s "GOES Alert" brad`;
-    #`cat $lockfile | mailx -s "GOES Alert" sot_yellow_alert 6172573986\@mobile.mycingular.com`;
+    #`cat $lockfile | mailx -s "GOES Alert" brad`;
+    `cat $lockfile | mailx -s "GOES Alert" sot_yellow_alert 6172573986\@mobile.mycingular.com`;
   } else { # if (!-s $lockfile) { # if an alert hasn't been sent, send one
     `date >> $lockfile`;  # touch $lockfile
   }
