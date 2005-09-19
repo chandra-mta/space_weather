@@ -13,6 +13,7 @@ endif
 
 #set lock = "/pool1/mta/prot_violateP6"
 set lock = "/tmp/mta/prot_violateP6"
+set block = "/home/mta/Snap/.scs107alert"
 #set lock = "/pool1/prot_violate_test"
 #set lock = "./prot_violate"
 
@@ -31,9 +32,15 @@ set lock = "/tmp/mta/prot_violateP6"
         curr_state.pl >> $lock
       endif
 
-      echo "This message sent to sot_red_alert" >> $lock
-      cat $lock | mailx -s ACE_p3_scaled sot_red_alert
-      #cat $lock | mailx -s ACE_p3_scaled_test brad
+      if (! -s $block) then
+        echo "This message sent to sot_red_alert" >> $lock
+        cat $lock | mailx -s ACE_p3_scaled sot_red_alert
+      endif
+      if ( -s $block) then
+        echo "This message sent to sot_yellow_alert" >> $lock
+        cat $lock | mailx -s ACE_p3_scaled sot_yellow_alert
+      endif
+
     endif
 
 #end
