@@ -7,7 +7,6 @@ include /data/mta4/MTA/include/Makefile.MTA
 
 BIN  = G10_calc.csh G11_calc.csh G11_viol.pl G12_calc.csh G8_calc.csh ace_invalid_data.csh ace_invalid_spec.csh aceviolation.csh aceviolation_electrons.csh aceviolation_protons.csh aceviolation_protonsP3_P5.csh aceviolation_protonsP5.csh aceviolation_protonsP6.csh calculate.csh calculate_kp.csh kpalert.pl
 DATA = image2 image_i acedata rob1 footer
-WWW = ace.html
 #DOC  = ReadMe
 
 install:

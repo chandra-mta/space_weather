@@ -6,8 +6,10 @@
 <td>
 <a href="http://www.srl.caltech.edu/ACE/ASC/."> 
 <IMG alt="ACE SCIENCE CENTER" SRC="./COORDINATION/asc100x79.gif"></a></td>
+<!--
 <td><a href="http://www.sec.noaa.gov/ace/ACErtsw_data.html"> 
 <IMG alt="ACE plotting tools" SRC="./COORDINATION/ACErtsw_logo.gif"></a></td>
+-->
 <td><a href="http://www.sec.noaa.gov/index.html"> 
 <IMG alt="Space Environment Center" SRC="./COORDINATION/ssel.gif"></a></td>
 </tr>
@@ -16,8 +18,10 @@
 <tr>
 <td><a href="http://www.srl.caltech.edu/ACE/ASC/."> 
 ACE SCIENCE CENTER</a></td>
+<!--
 <td><a href="http://www.sec.noaa.gov/ace/ACErtsw_data.html"> 
 ACE plotting tools</a></td>
+-->
 <td><a href="http://www.sec.noaa.gov/index.html"> 
 Space Environment Center</a></td>
 </tr>
