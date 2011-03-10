@@ -39,7 +39,8 @@ set WAPdir=/data/mta4/www/WL
 #sec set file = ftp://solar.sec.noaa.gov/pub/lists/ace/ace_epam_5m.txt
 #set file = ftp://www.sec.noaa.gov/pub/lists/ace/ace_epam_5m.txt
 #set file = ftp://ftp.sec.noaa.gov/pub/lists/ace/ace_epam_5m.txt
-set file = http://sec.noaa.gov/ftpdir/lists/ace/ace_epam_5m.txt
+#set file = http://sec.noaa.gov/ftpdir/lists/ace/ace_epam_5m.txt
+set file = http://www.swpc.noaa.gov/ftpdir/lists/ace/ace_epam_5m.txt
 
 rm $SPACE_Wdir/returned
 /opt/local/bin/lynx -source $file > $SPACE_Wdir/returned
@@ -70,9 +71,9 @@ if ($count > 28) then
 #    rm /data/mta4/www/ace.html
 
 #go collect ACE image and invert. 
-#/opt/local/bin/lynx -source http://www.sec.noaa.gov/ace/Epam_7d.gif | /opt/local/bin/convert -negate - - >! $WEBdir/Epam_7di.gif
-#/opt/local/bin/lynx -source http://www.sec.noaa.gov/ace/Epam_7d.gif >!  $WEBdir/Epam_7d.gif
-#/opt/local/bin/convert -negate $WEBdir/Epam_7d.gif $WEBdir/Epam_7di.gif
+/opt/local/bin/lynx -source http://www.sec.noaa.gov/ace/Epam_7d.gif | /opt/local/bin/convert -negate - - >! $WEBdir/Epam_7di.gif
+/opt/local/bin/lynx -source http://www.sec.noaa.gov/ace/Epam_7d.gif >!  $WEBdir/Epam_7d.gif
+/opt/local/bin/convert -negate $WEBdir/Epam_7d.gif $WEBdir/Epam_7di.gif
 /opt/local/bin/convert -negate $WEBdir/mta_ace_plot.gif $WEBdir/Epam_7di.gif
 /opt/local/bin/convert -negate $WEBdir/mta_ace_plot_P3.gif $WEBdir/Epam_7di_P3.gif
 
