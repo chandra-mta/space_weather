@@ -25,6 +25,7 @@ FUNCTION rdb_read, file_name, SILENT = silent, $
 ;             in lib_astro/pro/structure.
 ; 1999-01-16 dd Add a HEADER keyword to provide the head to
 ;               the calling routine.
+; 2011-03 bds modify to read ifot rdb files (remove special chars to make valid struct names
 
    on_error, 2                  ; stay here?
    
@@ -58,8 +59,16 @@ FUNCTION rdb_read, file_name, SILENT = silent, $
       ih = ih+1
    end
    if ih GE 2 then header = header(0:ih-2) else header=['#']
-   col_names = STR_SEP(line_in,STRING(9B))
-   if NOT(KEYWORD_SET(SILENT)) then print, col_names
+   ;col_names = STR_SEP(line_in,STRING(9B))
+   col_read = STR_SEP(line_in,STRING(9B))
+   col_names=strarr(n_elements(col_read))
+   for col=0,n_elements(col_read)-1 do begin
+     ;split=strsplit(col_read(col),/extract)
+     ; check for special characters not allowed in structs
+     ;col_names(col)=strjoin(strsplit(split(0),".",/extract),"_")
+     col_names(col)=strjoin(strsplit(col_read(col)," .()",/extract),"_")
+   endfor
+   if NOT(KEYWORD_SET(SILENT)) then print, strjoin(col_names,"+")
    
 ; Read column data types line
    READF, unit, line_in
