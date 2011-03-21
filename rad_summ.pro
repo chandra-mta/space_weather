@@ -1,4 +1,4 @@
-PRO RAD_SUMM
+PRO RAD_SUMM_ATT2
 
 readcol,"/proj/rac/ops/CRM3/CRMsummary.dat",infile,format="a",delimiter="ZZZ"
 readcol,"/pool14/chandra/chandra_psi.snapshot",snapshot,format="a",delimiter="ZZZ"
@@ -9,7 +9,6 @@ readcol,"/proj/rac/ops/ACE/fluace.dat",ace,format="a",delimiter="ZZZ"
 ;http://www.swpc.noaa.gov/ftpdir/lists/particle/Gp_part_5m.txt
 
 orb_time= 228600L
-rad_time= 207720L
 ;rad_time= 204600L-17500L  ; temp HRC attenuation for 2011:068 orbit
 
 line= strsplit(infile(0),":",/extract)
@@ -54,25 +53,87 @@ calc_elapsed_time= crm_flu/crm_flx
 
 jday= systime(/julian,/utc)
 jorb_start= date_conv(strsplit(orb_start,":",/extract),"J")
-next_com='2010:294:03:40:00'
-jcom_start= date_conv(strsplit(next_com,":",/extract),"J")
 elapsed_time=(jday-jorb_start)*86400L
 time_to_per=orb_time-elapsed_time
-time_to_rad=rad_time-elapsed_time
+
+; find radzone start and end times
+files=findfile('/proj/sot/ska/data/arc/iFOT_events/radmon/*.rdb')
+print, "Radmon file ", files(n_elements(files)-1)
+rdb_dat=rdb_read(files(n_elements(files)-1))
+found=0
+i=0
+rad_end=0
+rad_end_str="NULL"
+while (found eq 0 and i lt n_elements(rdb_dat)) do begin
+  rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
+  yr=rdb_time(0)
+  dd=rdb_time(1)
+  hh=rdb_time(2)
+  mm=rdb_time(3)
+  print, yr,dd,hh,mm
+  rad_start=rad_end
+  rad_start_str=rad_end_str
+  rdb_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  rad_end_str=strjoin([yr,dd,hh,mm,'00'],":")
+  if (rdb_start_test gt jday) then begin
+    rad_end_str=strjoin([yr,dd,hh,mm,'00'],":")
+    rad_end=rdb_start_test
+    found=1
+    print, "found rad ", i
+  endif
+  i=i+1
+endwhile
+time_to_rad=(rad_end-jday)*86400L
+rad_time= (rad_end-rad_start)*86400L
+
+; find SIs for rest of orbit
+files=findfile('/proj/sot/ska/data/arc/iFOT_events/or_er/*.rdb')
+print, "OR_ER file ", files(n_elements(files)-1)
+rdb_dat=rdb_read(files(n_elements(files)-1))
+found=0
+i=0
+att_tmp_time=0
+while (found eq 0 and i lt n_elements(rdb_dat)) do begin
+  rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
+  yr=rdb_time(0)
+  dd=rdb_time(1)
+  hh=rdb_time(2)
+  mm=rdb_time(3)
+  print, yr,dd,hh,mm
+  rdb_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  rdb_time = strsplit(rdb_dat(i).TStop_GMT,":",/extract)
+  yr=rdb_time(0)
+  dd=rdb_time(1)
+  hh=rdb_time(2)
+  mm=rdb_time(3)
+  rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  att_time=0
+  if (rdb_start_test lt jday and rdb_stop_test gt jday) then begin
+    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_tmp_time = rdb_stop_test-jday
+    print, "ACIS 1", rdb_stop_test, jday, att_tmp_time
+  endif
+  if (rdb_start_test gt jday and rdb_stop_test lt rad_end) then begin
+    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)
+    print, "ACIS 2", rdb_stop_test, rdb_start_test,jday, att_tmp_time
+  endif
+  if (rdb_start_test gt rad_end) then found=1
+  i=i+1
+endwhile
+att_time=att_tmp_time*86400L
+print, "att_time", att_time
 
 ; find next comm time
 files=findfile('/proj/sot/ska/data/arc/iFOT_events/comm/*.rdb')
 print, "Comm file ", files(n_elements(files)-1)
-;readcol, files(n_elements(files)-1),type,tstart,tstop,bot,eot,sta,config,site,supp,act,lga,soe, $
-readcol, files(n_elements(files)-1),com_dat, $
-    format="a", delimiter="ZZZ", skipline=2
+com_dat=rdb_read(files(n_elements(files)-1))
 found=0
 i=0
 while (found eq 0 and i lt n_elements(com_dat)) do begin
-  yr=strmid(com_dat(i),14,4)
-  dd=strmid(com_dat(i),19,3)
-  hh=strmid(com_dat(i),58,2)
-  mm=strmid(com_dat(i),60,2)
+  comm_time = strsplit(com_dat(i).TStart_GMT,":",/extract)
+  yr=comm_time(0)
+  dd=comm_time(1)
+  hh=comm_time(2)
+  mm=comm_time(3)
   print, yr,dd,hh,mm
   jcom_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
   if (jcom_start_test gt jday) then begin
@@ -86,67 +147,89 @@ while (found eq 0 and i lt n_elements(com_dat)) do begin
   print, "find com ", i
 endwhile
 
-;time_to_com=10800
-print, elapsed_time, time_to_per, time_to_rad, rad_time, time_to_com
+; find attenuated time to next comm
+files=findfile('/proj/sot/ska/data/arc/iFOT_events/or_er/*.rdb')
+print, "OR_ER file ", files(n_elements(files)-1)
+rdb_dat=rdb_read(files(n_elements(files)-1))
+found=0
+i=0
+att_com_tmp_time=0  ; remove 
+while (found eq 0 and i lt n_elements(rdb_dat)) do begin
+  rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
+  yr=rdb_time(0)
+  dd=rdb_time(1)
+  hh=rdb_time(2)
+  mm=rdb_time(3)
+  print, yr,dd,hh,mm
+  rdb_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  rdb_time = strsplit(rdb_dat(i).TStop_GMT,":",/extract)
+  yr=rdb_time(0)
+  dd=rdb_time(1)
+  hh=rdb_time(2)
+  mm=rdb_time(3)
+  rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  att_com_time=0
+  if (rdb_start_test lt jday and rdb_stop_test gt jday and rdb_stop_test lt jcom_start) then begin
+    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_com_tmp_time = rdb_stop_test-jday
+  endif
+  if (rdb_start_test lt jday and rdb_stop_test gt jday and rdb_stop_test gt jcom_start) then begin
+    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_com_tmp_time = jcom_start-jday
+  endif
+  if (rdb_start_test gt jday and rdb_stop_test lt jcom_start) then begin
+    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_com_tmp_time = att_com_tmp_time+(rdb_stop_test-rdb_start_test)
+  endif
+  if (rdb_start_test gt jday and rdb_stop_test gt jcom_start) then begin
+    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_com_tmp_time = att_com_tmp_time+(jcom_start-rdb_start_test)
+  endif
+  if (rdb_start_test gt jcom_start) then found=1
+  i=i+1
+endwhile
+att_com_time=att_com_tmp_time*86400L
 
-;;;;;;;;; for orbit starting 2011:068 - manually attenuate HRC
-if (elapsed_time lt 31500) then time_to_rad = time_to_rad - 17500
-if (elapsed_time gt 31500 and elapsed_time lt 31500+17500) then time_to_rad = 137040
-
-;crm_flx_att = crm_flx
-ace_p3_flx_att = ace_p3_flx
-;ace_p3_flu_att = ace_p3_flu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 if (time_to_rad lt 0) then time_to_rad = 0
 if (time_to_com lt 0) then time_to_com = 0
+print, elapsed_time,time_to_per,time_to_rad,att_time,rad_start,rad_end,rad_time,time_to_com,att_com_time
 
 crm_pflu= crm_flu+(crm_flx*time_to_rad)
 crm_cflu= crm_flu+(crm_flx*time_to_com)
-crm_pflu_att= crm_flu_att+(crm_flx_att*time_to_rad)
-;;crm_pflu_att= crm_flu_att+(crm_flx*time_to_rad) ; use until start of rad zone 2011:068
-crm_2pflu_att= crm_flu_att+(crm_flx_att*time_to_rad*2)
-;;crm_2pflu_att= crm_flu_att+(crm_flx*time_to_rad*2)
-crm_10pflu_att= crm_flu_att+(crm_flx_att*time_to_rad*10)
-;;crm_10pflu_att= crm_flu_att+(crm_flx*time_to_rad*10)
-crm_cflu_att= crm_flu_att+(crm_flx_att*time_to_com)
-;;crm_cflu_att= crm_flu_att+(crm_flx*time_to_com)
+crm_pflu_att= crm_flu_att+(crm_flx_att*att_time)
+crm_2pflu_att= crm_flu_att+(crm_flx_att*att_time*2)
+crm_10pflu_att= crm_flu_att+(crm_flx_att*att_time*10)
+crm_cflu_att= crm_flu_att+(crm_flx_att*att_com_time)
 
-;;ace_p3_flx_att= ace_p3_flx*att_factor
+ace_p3_flx_att= ace_p3_flx*att_factor
 ace_p3_flu_att= ace_p3_flu*att_flu_factor
 ace_p3_pflu= ace_p3_flu+(ace_p3_flx*time_to_rad)
 ace_p3_cflu= ace_p3_flu+(ace_p3_flx*time_to_com)
-ace_p3_pflu_att= ace_p3_flu_att+(ace_p3_flx_att*time_to_rad)
-;;ace_p3_pflu_att= ace_p3_flu_att+(ace_p3_flx*time_to_rad)
-ace_p3_2pflu_att= ace_p3_flu_att+(ace_p3_flx_att*time_to_rad*2)
-;;ace_p3_2pflu_att= ace_p3_flu_att+(ace_p3_flx*time_to_rad*2)
-ace_p3_10pflu_att= ace_p3_flu_att+(ace_p3_flx_att*time_to_rad*10)
-;;ace_p3_10pflu_att= ace_p3_flu_att+(ace_p3_flx*time_to_rad*10)
-ace_p3_cflu_att= ace_p3_flu_att+(ace_p3_flx_att*time_to_com)
-;;ace_p3_cflu_att= ace_p3_flu_att+(ace_p3_flx*time_to_com)
+ace_p3_pflu_att= ace_p3_flu_att+(ace_p3_flx_att*att_time)
+ace_p3_2pflu_att= ace_p3_flu_att+(ace_p3_flx_att*att_time*2)
+ace_p3_10pflu_att= ace_p3_flu_att+(ace_p3_flx_att*att_time*10)
+ace_p3_cflu_att= ace_p3_flu_att+(ace_p3_flx_att*att_com_time)
 
 goes_p2_flu= goes_p2_flx*elapsed_time
 goes_p2_flx_att= goes_p2_flx*att_factor
 goes_p2_flu_att= goes_p2_flu*att_flu_factor
 goes_p2_pflu= goes_p2_flu+(goes_p2_flx*time_to_rad)
 goes_p2_cflu= goes_p2_flu+(goes_p2_flx*time_to_com)
-goes_p2_pflu_att= goes_p2_flu_att+(goes_p2_flx_att*time_to_rad)
-goes_p2_cflu_att= goes_p2_flu_att+(goes_p2_flx_att*time_to_com)
+goes_p2_pflu_att= goes_p2_flu_att+(goes_p2_flx_att*att_time)
+goes_p2_cflu_att= goes_p2_flu_att+(goes_p2_flx_att*att_com_time)
 
 goes_p5_flu= goes_p5_flx*elapsed_time
 goes_p5_flx_att= goes_p5_flx*att_factor
 goes_p5_flu_att= goes_p5_flu*att_flu_factor
 goes_p5_pflu= goes_p5_flu+(goes_p5_flx*time_to_rad)
 goes_p5_cflu= goes_p5_flu+(goes_p5_flx*time_to_com)
-goes_p5_pflu_att= goes_p5_flu_att+(goes_p5_flx_att*time_to_rad)
-goes_p5_cflu_att= goes_p5_flu_att+(goes_p5_flx_att*time_to_com)
+goes_p5_pflu_att= goes_p5_flu_att+(goes_p5_flx_att*att_time)
+goes_p5_cflu_att= goes_p5_flu_att+(goes_p5_flx_att*att_com_time)
 
 goes_e2_flu= goes_e2_flx*elapsed_time
 goes_e2_flx_att= goes_e2_flx*att_factor
 goes_e2_flu_att= goes_e2_flu*att_flu_factor
 goes_e2_pflu= goes_e2_flu+(goes_e2_flx*time_to_rad)
 goes_e2_cflu= goes_e2_flu+(goes_e2_flx*time_to_com)
-goes_e2_pflu_att= goes_e2_flu_att+(goes_e2_flx_att*time_to_rad)
-goes_e2_cflu_att= goes_e2_flu_att+(goes_e2_flx_att*time_to_com)
+goes_e2_pflu_att= goes_e2_flu_att+(goes_e2_flx_att*att_time)
+goes_e2_cflu_att= goes_e2_flu_att+(goes_e2_flx_att*att_com_time)
 
 line0= strsplit(snapshot(0),"()",/extract)
 line1= strsplit(snapshot(1),/extract)
@@ -158,7 +241,7 @@ e150 = line(11)
 line= strsplit(snapshot(20),/extract)
 e1300 = line(7)
 
-openw, OUT, "rad_summ.html", /get_lun
+openw, OUT, "rad_summ_att.html", /get_lun
 printf, OUT, '<html><head><title>Chandra Radiation Summary</title></head>'
 printf, OUT, '<body bgcolor="#000000" text="#eeeeee">'
 printf, OUT, '<h2>Chandra Radiation Environment Summary</h2>'
@@ -170,7 +253,7 @@ printf, OUT, 'Next comm: ',next_com,' (',string(time_to_com/3600.0,format='(F4.1
 printf, OUT, 'Next rad zone in ',string(time_to_rad/3600.0,format='(F4.1)'),' hours<br />'
 printf, OUT, 'Last updated: ', systime(/utc),'<br /><br />'
 printf, OUT, '<table border=1>'
-printf, OUT, '<tr><th>&#160</th><th colspan=5>Attenuated * ACE P3 accurately projects fluences based on upcoming SI/Grating configuration.  <br />The others currently assume current configuration for the rest of the orbit (accurate projection in work.)</th></tr>
+printf, OUT, '<tr><th>&#160</th><th colspan=5>Attenuated * projects fluences based on upcoming SI configuration (grating attenuation coming soon.) </th></tr>
 printf, OUT, '<tr><th>&#160</th><th>2 hr ave. Flux</th><th>Current fluence<br />(total so far in current orbit)</th><th>Projected fluence<br /> until next rad zone</th><th>Projected fluence</th><th>Limits</th>'
 printf, OUT, '<tr><th>&#160</th><th>(p/cm^2-s-sr-MeV)</th><th>(p/cm^2-sr-MeV)</th><th>at current flux<br />(at 2X flux)<br/>*at 10X flux*</th><th>until next comm.</th><th>&#160</th>'
 printf, OUT, '<tr><td>CRM</td>'
