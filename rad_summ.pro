@@ -9,7 +9,8 @@ readcol,"/proj/rac/ops/ACE/fluace.dat",ace,format="a",delimiter="ZZZ"
 ;http://www.swpc.noaa.gov/ftpdir/lists/particle/Gp_part_5m.txt
 
 orb_time= 228600L
-rad_time= 204600L
+rad_time= 207720L
+;rad_time= 204600L-17500L  ; temp HRC attenuation for 2011:068 orbit
 
 line= strsplit(infile(0),":",/extract)
 config = line(1)
@@ -88,24 +89,40 @@ endwhile
 ;time_to_com=10800
 print, elapsed_time, time_to_per, time_to_rad, rad_time, time_to_com
 
+;;;;;;;;; for orbit starting 2011:068 - manually attenuate HRC
+if (elapsed_time lt 31500) then time_to_rad = time_to_rad - 17500
+if (elapsed_time gt 31500 and elapsed_time lt 31500+17500) then time_to_rad = 137040
+
+;crm_flx_att = crm_flx
+ace_p3_flx_att = ace_p3_flx
+;ace_p3_flu_att = ace_p3_flu
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 if (time_to_rad lt 0) then time_to_rad = 0
 if (time_to_com lt 0) then time_to_com = 0
 
 crm_pflu= crm_flu+(crm_flx*time_to_rad)
 crm_cflu= crm_flu+(crm_flx*time_to_com)
 crm_pflu_att= crm_flu_att+(crm_flx_att*time_to_rad)
+;;crm_pflu_att= crm_flu_att+(crm_flx*time_to_rad) ; use until start of rad zone 2011:068
 crm_2pflu_att= crm_flu_att+(crm_flx_att*time_to_rad*2)
+;;crm_2pflu_att= crm_flu_att+(crm_flx*time_to_rad*2)
 crm_10pflu_att= crm_flu_att+(crm_flx_att*time_to_rad*10)
+;;crm_10pflu_att= crm_flu_att+(crm_flx*time_to_rad*10)
 crm_cflu_att= crm_flu_att+(crm_flx_att*time_to_com)
+;;crm_cflu_att= crm_flu_att+(crm_flx*time_to_com)
 
-ace_p3_flx_att= ace_p3_flx*att_factor
-ace_p3_flu_att= ace_p3_flu*att_factor
+;;ace_p3_flx_att= ace_p3_flx*att_factor
+ace_p3_flu_att= ace_p3_flu*att_flu_factor
 ace_p3_pflu= ace_p3_flu+(ace_p3_flx*time_to_rad)
 ace_p3_cflu= ace_p3_flu+(ace_p3_flx*time_to_com)
 ace_p3_pflu_att= ace_p3_flu_att+(ace_p3_flx_att*time_to_rad)
+;;ace_p3_pflu_att= ace_p3_flu_att+(ace_p3_flx*time_to_rad)
 ace_p3_2pflu_att= ace_p3_flu_att+(ace_p3_flx_att*time_to_rad*2)
+;;ace_p3_2pflu_att= ace_p3_flu_att+(ace_p3_flx*time_to_rad*2)
 ace_p3_10pflu_att= ace_p3_flu_att+(ace_p3_flx_att*time_to_rad*10)
+;;ace_p3_10pflu_att= ace_p3_flu_att+(ace_p3_flx*time_to_rad*10)
 ace_p3_cflu_att= ace_p3_flu_att+(ace_p3_flx_att*time_to_com)
+;;ace_p3_cflu_att= ace_p3_flu_att+(ace_p3_flx*time_to_com)
 
 goes_p2_flu= goes_p2_flx*elapsed_time
 goes_p2_flx_att= goes_p2_flx*att_factor
@@ -149,11 +166,11 @@ printf, OUT, '<h2>Chandra Radiation Environment Summary</h2>'
 printf, OUT, '<br />Orbit start: ',orb_start,' (all times on this page are UTC) <br />'
 printf, OUT, 'Current altitude (km) and orbit leg: ',alt,'<br />'
 printf, OUT, 'Current configuration: ',config,'<br />'
-printf, OUT, 'Next comm: ',next_com,' (',string(time_to_com/3600.0,format='(F4.1)'),'hours )<br />'
-printf, OUT, 'Next rad zone in ',string(time_to_rad/3600.0,format='(F4.1)'),'hours<br />'
+printf, OUT, 'Next comm: ',next_com,' (',string(time_to_com/3600.0,format='(F4.1)'),' hours )<br />'
+printf, OUT, 'Next rad zone in ',string(time_to_rad/3600.0,format='(F4.1)'),' hours<br />'
 printf, OUT, 'Last updated: ', systime(/utc),'<br /><br />'
 printf, OUT, '<table border=1>'
-printf, OUT, '<tr><th>&#160</th><th colspan=5>Attenuated</th></tr>
+printf, OUT, '<tr><th>&#160</th><th colspan=5>Attenuated * ACE P3 accurately projects fluences based on upcoming SI/Grating configuration.  <br />The others currently assume current configuration for the rest of the orbit (accurate projection in work.)</th></tr>
 printf, OUT, '<tr><th>&#160</th><th>2 hr ave. Flux</th><th>Current fluence<br />(total so far in current orbit)</th><th>Projected fluence<br /> until next rad zone</th><th>Projected fluence</th><th>Limits</th>'
 printf, OUT, '<tr><th>&#160</th><th>(p/cm^2-s-sr-MeV)</th><th>(p/cm^2-sr-MeV)</th><th>at current flux<br />(at 2X flux)<br/>*at 10X flux*</th><th>until next comm.</th><th>&#160</th>'
 printf, OUT, '<tr><td>CRM</td>'
@@ -206,9 +223,9 @@ printf, OUT, '<td>&#160</td></tr>'
 ;printf, OUT, '<td>&#160</td></tr>'
 
 printf, OUT, '<tr><th colspan=6>&#160</th></tr>
-printf, OUT, '<tr><th>&#160</th><th colspan=5>External</th></tr>
-printf, OUT, '<tr><th>&#160</th><th>2 hr ave. Flux</th><th>Current fluence (total so far in current orbit)</th><th>Projected fluence</th><th>Projected fluence</th><th>Limits</th>'
-printf, OUT, '<tr><th>&#160</th><th>(p/cm^2-s-sr-MeV)</th><th>(p/cm^2-sr-MeV)</th><th>until next radzone (total for current orbit)</th><th>until next comm.</th><th>&#160</th>'
+printf, OUT, '<tr><th>&#160</th><th colspan=5>External - does not take into account the instrument configuration </th></tr>
+printf, OUT, '<tr><th>&#160</th><th>2 hr ave. Flux</th><th>Current fluence <br />(total so far in current orbit)</th><th>Projected fluence</th><th>Projected fluence</th><th>Limits</th>'
+printf, OUT, '<tr><th>&#160</th><th>(p/cm^2-s-sr-MeV)</th><th>(p/cm^2-sr-MeV)</th><th>until next radzone <br />(total for current orbit)</th><th>until next comm.</th><th>&#160</th>'
 printf, OUT, '<tr><td>CRM</td>'
 printf, OUT, '<td>',string(crm_flx,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(crm_flu,format='(E9.3)'),'</td>'
