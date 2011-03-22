@@ -1,4 +1,30 @@
-PRO RAD_SUMM_ATT2
+FUNCTION CK_GRAT, jday
+files=findfile('/proj/sot/ska/data/arc/iFOT_events/grating/*.rdb')
+print, "Grat file ", files(n_elements(files)-1)
+grat_dat=rdb_read(files(n_elements(files)-1))
+for i=0,n_elements(grat_dat)-2 do begin
+  rdb_time = strsplit(grat_dat(i).TStart_GMT,":",/extract)
+  yr=rdb_time(0)
+  dd=rdb_time(1)
+  hh=rdb_time(2)
+  mm=rdb_time(3)
+  print, yr,dd,hh,mm
+  rdb_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  rdb_time = strsplit(grat_dat(i+1).TStart_GMT,":",/extract)
+  yr=rdb_time(0)
+  dd=rdb_time(1)
+  hh=rdb_time(2)
+  mm=rdb_time(3)
+  rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  if (rdb_start_test lt jday and rdb_stop_test gt jday) then begin
+    print, "Grat position at ", jday, " ", grat_dat(i).GRATING_GRATING
+    return, grat_dat(i).GRATING_GRATING
+  endif
+  if (rdb_start_test gt jday) then return, "NULL"
+endfor
+end
+
+PRO RAD_SUMM_ATT3
 
 readcol,"/proj/rac/ops/CRM3/CRMsummary.dat",infile,format="a",delimiter="ZZZ"
 readcol,"/pool14/chandra/chandra_psi.snapshot",snapshot,format="a",delimiter="ZZZ"
@@ -60,6 +86,7 @@ time_to_per=orb_time-elapsed_time
 files=findfile('/proj/sot/ska/data/arc/iFOT_events/radmon/*.rdb')
 print, "Radmon file ", files(n_elements(files)-1)
 rdb_dat=rdb_read(files(n_elements(files)-1))
+rdb_dat=rdb_dat(where(strmatch(rdb_dat.Type_Description,'*Disable') eq 1))
 found=0
 i=0
 rad_end=0
@@ -87,13 +114,14 @@ time_to_rad=(rad_end-jday)*86400L
 rad_time= (rad_end-rad_start)*86400L
 
 ; find SIs for rest of orbit
-files=findfile('/proj/sot/ska/data/arc/iFOT_events/or_er/*.rdb')
-print, "OR_ER file ", files(n_elements(files)-1)
+files=findfile('/proj/sot/ska/data/arc/iFOT_events/sim/*.rdb')
+print, "SIM file ", files(n_elements(files)-1)
 rdb_dat=rdb_read(files(n_elements(files)-1))
+rdb_dat=rdb_dat(where(rdb_dat.Type_Description eq "SIM Translation"))
 found=0
 i=0
 att_tmp_time=0
-while (found eq 0 and i lt n_elements(rdb_dat)) do begin
+while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
   rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
   yr=rdb_time(0)
   dd=rdb_time(1)
@@ -101,7 +129,7 @@ while (found eq 0 and i lt n_elements(rdb_dat)) do begin
   mm=rdb_time(3)
   print, yr,dd,hh,mm
   rdb_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
-  rdb_time = strsplit(rdb_dat(i).TStop_GMT,":",/extract)
+  rdb_time = strsplit(rdb_dat(i+1).TStart_GMT,":",/extract)
   yr=rdb_time(0)
   dd=rdb_time(1)
   hh=rdb_time(2)
@@ -109,11 +137,25 @@ while (found eq 0 and i lt n_elements(rdb_dat)) do begin
   rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
   att_time=0
   if (rdb_start_test lt jday and rdb_stop_test gt jday) then begin
-    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_tmp_time = rdb_stop_test-jday
+    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+      case ck_grat((rdb_start_test+rdb_stop_test)/2) of 
+        "NONE": att_tmp_time = rdb_stop_test-jday
+        "HETG": att_tmp_time = (rdb_stop_test-jday)*0.2
+        "LETG": att_tmp_time = (rdb_stop_test-jday)*0.5
+        "NULL": print, "did not find grating position for time ", jday
+      endcase
+    endif
     print, "ACIS 1", rdb_stop_test, jday, att_tmp_time
   endif
   if (rdb_start_test gt jday and rdb_stop_test lt rad_end) then begin
-    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)
+    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+      case ck_grat((rdb_start_test+rdb_stop_test)/2) of 
+        "NONE": att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)
+        "HETG": att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)*0.2
+        "LETG": att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)*0.5
+        "NULL": print, "did not find grating position for time ", jday
+      endcase
+    endif
     print, "ACIS 2", rdb_stop_test, rdb_start_test,jday, att_tmp_time
   endif
   if (rdb_start_test gt rad_end) then found=1
@@ -122,39 +164,50 @@ endwhile
 att_time=att_tmp_time*86400L
 print, "att_time", att_time
 
-; find next comm time
+; find next 2 comm times
 files=findfile('/proj/sot/ska/data/arc/iFOT_events/comm/*.rdb')
 print, "Comm file ", files(n_elements(files)-1)
 com_dat=rdb_read(files(n_elements(files)-1))
 found=0
+next_com=strarr(2)
+jcom_start=[jday,jday]
+time_to_com=lonarr(2)
 i=0
-while (found eq 0 and i lt n_elements(com_dat)) do begin
+while (found lt 2 and i lt n_elements(com_dat)-1) do begin
   comm_time = strsplit(com_dat(i).TStart_GMT,":",/extract)
   yr=comm_time(0)
   dd=comm_time(1)
-  hh=comm_time(2)
-  mm=comm_time(3)
+  if (com_dat(i).DSN_COMM_bot gt 999) then begin
+    hh = strmid(strtrim(com_dat(i).DSN_COMM_bot,1),0,2)
+    mm = strmid(strtrim(com_dat(i).DSN_COMM_bot,1),2,2)
+  endif else begin
+    hh = strmid(strtrim(com_dat(i).DSN_COMM_bot,1),0,1)
+    mm = strmid(strtrim(com_dat(i).DSN_COMM_bot,1),1,2)
+  endelse
   print, yr,dd,hh,mm
   jcom_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
   if (jcom_start_test gt jday) then begin
-    next_com=strjoin([yr,dd,hh,mm,'00'],":")
-    jcom_start=jcom_start_test
-    time_to_com=(jcom_start-jday)*86400L
-    found=1
-    print, "found com ", i
+    next_com(found)=strjoin([yr,dd,hh,mm,'00'],":")
+    jcom_start(found)=jcom_start_test
+    time_to_com(found)=(jcom_start(found)-jday)*86400L
+    found=found+1
+    print, "found com ", i, found
   endif
   i=i+1
-  print, "find com ", i
 endwhile
+print, "found com ", i, next_com(0),jcom_start(0),jday,time_to_com(0)
+print, "found com ", i, next_com(1),jcom_start(1),jday,time_to_com(1)
 
 ; find attenuated time to next comm
-files=findfile('/proj/sot/ska/data/arc/iFOT_events/or_er/*.rdb')
-print, "OR_ER file ", files(n_elements(files)-1)
+; find SIs for rest of orbit
+files=findfile('/proj/sot/ska/data/arc/iFOT_events/sim/*.rdb')
+print, "SIM file ", files(n_elements(files)-1)
 rdb_dat=rdb_read(files(n_elements(files)-1))
+rdb_dat=rdb_dat(where(rdb_dat.Type_Description eq "SIM Translation"))
 found=0
 i=0
-att_com_tmp_time=0  ; remove 
-while (found eq 0 and i lt n_elements(rdb_dat)) do begin
+att_tmp_time=0
+while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
   rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
   yr=rdb_time(0)
   dd=rdb_time(1)
@@ -162,74 +215,193 @@ while (found eq 0 and i lt n_elements(rdb_dat)) do begin
   mm=rdb_time(3)
   print, yr,dd,hh,mm
   rdb_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
-  rdb_time = strsplit(rdb_dat(i).TStop_GMT,":",/extract)
+  rdb_time = strsplit(rdb_dat(i+1).TStart_GMT,":",/extract)
   yr=rdb_time(0)
   dd=rdb_time(1)
   hh=rdb_time(2)
   mm=rdb_time(3)
   rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
-  att_com_time=0
-  if (rdb_start_test lt jday and rdb_stop_test gt jday and rdb_stop_test lt jcom_start) then begin
-    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_com_tmp_time = rdb_stop_test-jday
+  if (rdb_start_test lt jday and rdb_stop_test gt jday and rdb_stop_test lt jcom_start(0)) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+      case ck_grat((rdb_start_test+rdb_stop_test)/2) of 
+        "NONE": att_tmp_time = att_tmp_time+(rdb_stop_test-jday)
+        "HETG": att_tmp_time = att_tmp_time+(rdb_stop_test-jday)*0.2
+        "LETG": att_tmp_time = att_tmp_time+(rdb_stop_test-jday)*0.5
+        "NULL": print, "did not find grating position for time ", jday
+      endcase
+    endif
+    print, "com ACIS 1", rdb_stop_test, jday, jcom_start, att_tmp_time
   endif
-  if (rdb_start_test lt jday and rdb_stop_test gt jday and rdb_stop_test gt jcom_start) then begin
-    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_com_tmp_time = jcom_start-jday
+  if (rdb_start_test lt jday and rdb_stop_test gt jday and rdb_stop_test gt jcom_start(0)) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+      case ck_grat((rdb_start_test+rdb_stop_test)/2) of 
+        "NONE": att_tmp_time = att_tmp_time+(jcom_start(0)-jday)
+        "HETG": att_tmp_time = att_tmp_time+(jcom_start(0)-jday)*0.2
+        "LETG": att_tmp_time = att_tmp_time+(jcom_start(0)-jday)*0.5
+        "NULL": print, "did not find grating position for time ", jday
+      endcase
+      found=1
+    endif
+    print, "com ACIS 2", rdb_stop_test, jday, jcom_start, att_tmp_time
   endif
-  if (rdb_start_test gt jday and rdb_stop_test lt jcom_start) then begin
-    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_com_tmp_time = att_com_tmp_time+(rdb_stop_test-rdb_start_test)
+  if (found eq 0 and rdb_start_test gt jday and rdb_stop_test lt jcom_start(0)) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+      case ck_grat((rdb_start_test+rdb_stop_test)/2) of 
+        "NONE": att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)
+        "HETG": att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)*0.2
+        "LETG": att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)*0.5
+        "NULL": print, "did not find grating position for time ", jday
+      endcase
+    endif
+    print, "com ACIS 3", rdb_stop_test, rdb_start_test,jday, jcom_start, att_tmp_time
   endif
-  if (rdb_start_test gt jday and rdb_stop_test gt jcom_start) then begin
-    if (rdb_dat(i).OBS_SI eq 'ACIS-I' or rdb_dat(i).OBS_SI eq 'ACIS-S') then att_com_tmp_time = att_com_tmp_time+(jcom_start-rdb_start_test)
+  if (found eq 0 and rdb_start_test gt jday and rdb_stop_test gt jcom_start(0)) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+      case ck_grat((rdb_start_test+rdb_stop_test)/2) of 
+        "NONE": att_tmp_time = att_tmp_time+(jcom_start(0)-rdb_start_test)
+        "HETG": att_tmp_time = att_tmp_time+(jcom_start(0)-rdb_start_test)*0.2
+        "LETG": att_tmp_time = att_tmp_time+(jcom_start(0)-rdb_start_test)*0.5
+        "NULL": print, "did not find grating position for time ", jday
+      endcase
+      found=1
+    endif
+    print, "com ACIS 4", rdb_stop_test, rdb_start_test,jday, jcom_start, att_tmp_time
   endif
-  if (rdb_start_test gt jcom_start) then found=1
+  if (rdb_start_test gt rad_end) then found=1
   i=i+1
 endwhile
-att_com_time=att_com_tmp_time*86400L
+att_com_time=att_tmp_time*86400L
+print, "att_com_time", att_com_time
 
+; find attenuated time to second next comm
+; find SIs for rest of orbit
+files=findfile('/proj/sot/ska/data/arc/iFOT_events/sim/*.rdb')
+print, "SIM file ", files(n_elements(files)-1)
+rdb_dat=rdb_read(files(n_elements(files)-1))
+rdb_dat=rdb_dat(where(rdb_dat.Type_Description eq "SIM Translation"))
+found=0
+i=0
+att_tmp_time=0
+while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
+  rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
+  yr=rdb_time(0)
+  dd=rdb_time(1)
+  hh=rdb_time(2)
+  mm=rdb_time(3)
+  print, yr,dd,hh,mm
+  rdb_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  rdb_time = strsplit(rdb_dat(i+1).TStart_GMT,":",/extract)
+  yr=rdb_time(0)
+  dd=rdb_time(1)
+  hh=rdb_time(2)
+  mm=rdb_time(3)
+  rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  if (rdb_start_test lt jday and rdb_stop_test gt jday and rdb_stop_test lt jcom_start(1)) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+      case ck_grat((rdb_start_test+rdb_stop_test)/2) of 
+        "NONE": att_tmp_time = att_tmp_time+(rdb_stop_test-jday)
+        "HETG": att_tmp_time = att_tmp_time+(rdb_stop_test-jday)*0.2
+        "LETG": att_tmp_time = att_tmp_time+(rdb_stop_test-jday)*0.5
+        "NULL": print, "did not find grating position for time ", jday
+      endcase
+    endif
+    print, "com ACIS 1", rdb_stop_test, jday, jcom_start, att_tmp_time
+  endif
+  if (rdb_start_test lt jday and rdb_stop_test gt jday and rdb_stop_test gt jcom_start(1)) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+      case ck_grat((rdb_start_test+rdb_stop_test)/2) of 
+        "NONE": att_tmp_time = att_tmp_time+(jcom_start(1)-jday)
+        "HETG": att_tmp_time = att_tmp_time+(jcom_start(1)-jday)*0.2
+        "LETG": att_tmp_time = att_tmp_time+(jcom_start(1)-jday)*0.5
+        "NULL": print, "did not find grating position for time ", jday
+      endcase
+      found=1
+    endif
+    print, "com ACIS 2", rdb_stop_test, jday, jcom_start, att_tmp_time
+  endif
+  if (found eq 0 and rdb_start_test gt jday and rdb_stop_test lt jcom_start(1)) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+      case ck_grat((rdb_start_test+rdb_stop_test)/2) of 
+        "NONE": att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)
+        "HETG": att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)*0.2
+        "LETG": att_tmp_time = att_tmp_time+(rdb_stop_test-rdb_start_test)*0.5
+        "NULL": print, "did not find grating position for time ", jday
+      endcase
+    endif
+    print, "com ACIS 3", rdb_stop_test, rdb_start_test,jday, jcom_start, att_tmp_time
+  endif
+  if (found eq 0 and rdb_start_test gt jday and rdb_stop_test gt jcom_start(1)) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+      case ck_grat((rdb_start_test+rdb_stop_test)/2) of 
+        "NONE": att_tmp_time = att_tmp_time+(jcom_start(1)-rdb_start_test)
+        "HETG": att_tmp_time = att_tmp_time+(jcom_start(1)-rdb_start_test)*0.2
+        "LETG": att_tmp_time = att_tmp_time+(jcom_start(1)-rdb_start_test)*0.5
+        "NULL": print, "did not find grating position for time ", jday
+      endcase
+      found=1
+    endif
+    print, "com ACIS 4", rdb_stop_test, rdb_start_test,jday, jcom_start, att_tmp_time
+  endif
+  if (rdb_start_test gt rad_end) then found=1
+  i=i+1
+endwhile
+att_com2_time=att_tmp_time*86400L
+print, "att_com2_time", att_com2_time
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 if (time_to_rad lt 0) then time_to_rad = 0
-if (time_to_com lt 0) then time_to_com = 0
-print, elapsed_time,time_to_per,time_to_rad,att_time,rad_start,rad_end,rad_time,time_to_com,att_com_time
+if (time_to_com(0) lt 0) then time_to_com(0) = 0
+if (time_to_com(1) lt 0) then time_to_com(1) = 0
+print, elapsed_time,time_to_per,time_to_rad,att_time,rad_start,rad_end,rad_time,time_to_com(0),att_com_time,time_to_com(1),att_com2_time
 
 crm_pflu= crm_flu+(crm_flx*time_to_rad)
-crm_cflu= crm_flu+(crm_flx*time_to_com)
-crm_pflu_att= crm_flu_att+(crm_flx_att*att_time)
-crm_2pflu_att= crm_flu_att+(crm_flx_att*att_time*2)
-crm_10pflu_att= crm_flu_att+(crm_flx_att*att_time*10)
-crm_cflu_att= crm_flu_att+(crm_flx_att*att_com_time)
+crm_cflu= crm_flu+(crm_flx*time_to_com(0))
+crm_c2flu= crm_flu+(crm_flx*time_to_com(1))
+crm_pflu_att= crm_flu_att+(crm_flx*att_time)
+crm_2pflu_att= crm_flu_att+(crm_flx*att_time*2)
+crm_10pflu_att= crm_flu_att+(crm_flx*att_time*10)
+crm_cflu_att= crm_flu_att+(crm_flx*att_com_time)
+crm_c2flu_att= crm_flu_att+(crm_flx*att_com2_time)
 
 ace_p3_flx_att= ace_p3_flx*att_factor
 ace_p3_flu_att= ace_p3_flu*att_flu_factor
 ace_p3_pflu= ace_p3_flu+(ace_p3_flx*time_to_rad)
-ace_p3_cflu= ace_p3_flu+(ace_p3_flx*time_to_com)
-ace_p3_pflu_att= ace_p3_flu_att+(ace_p3_flx_att*att_time)
-ace_p3_2pflu_att= ace_p3_flu_att+(ace_p3_flx_att*att_time*2)
-ace_p3_10pflu_att= ace_p3_flu_att+(ace_p3_flx_att*att_time*10)
-ace_p3_cflu_att= ace_p3_flu_att+(ace_p3_flx_att*att_com_time)
+ace_p3_cflu= ace_p3_flu+(ace_p3_flx*time_to_com(0))
+ace_p3_c2flu= ace_p3_flu+(ace_p3_flx*time_to_com(1))
+ace_p3_pflu_att= ace_p3_flu_att+(ace_p3_flx*att_time)
+ace_p3_2pflu_att= ace_p3_flu_att+(ace_p3_flx*att_time*2)
+ace_p3_10pflu_att= ace_p3_flu_att+(ace_p3_flx*att_time*10)
+ace_p3_cflu_att= ace_p3_flu_att+(ace_p3_flx*att_com_time)
+ace_p3_c2flu_att= ace_p3_flu_att+(ace_p3_flx*att_com2_time)
 
 goes_p2_flu= goes_p2_flx*elapsed_time
 goes_p2_flx_att= goes_p2_flx*att_factor
 goes_p2_flu_att= goes_p2_flu*att_flu_factor
 goes_p2_pflu= goes_p2_flu+(goes_p2_flx*time_to_rad)
-goes_p2_cflu= goes_p2_flu+(goes_p2_flx*time_to_com)
-goes_p2_pflu_att= goes_p2_flu_att+(goes_p2_flx_att*att_time)
-goes_p2_cflu_att= goes_p2_flu_att+(goes_p2_flx_att*att_com_time)
+goes_p2_cflu= goes_p2_flu+(goes_p2_flx*time_to_com(0))
+goes_p2_c2flu= goes_p2_flu+(goes_p2_flx*time_to_com(1))
+goes_p2_pflu_att= goes_p2_flu_att+(goes_p2_flx*att_time)
+goes_p2_cflu_att= goes_p2_flu_att+(goes_p2_flx*att_com_time)
+goes_p2_c2flu_att= goes_p2_flu_att+(goes_p2_flx*att_com2_time)
 
 goes_p5_flu= goes_p5_flx*elapsed_time
 goes_p5_flx_att= goes_p5_flx*att_factor
 goes_p5_flu_att= goes_p5_flu*att_flu_factor
 goes_p5_pflu= goes_p5_flu+(goes_p5_flx*time_to_rad)
-goes_p5_cflu= goes_p5_flu+(goes_p5_flx*time_to_com)
-goes_p5_pflu_att= goes_p5_flu_att+(goes_p5_flx_att*att_time)
-goes_p5_cflu_att= goes_p5_flu_att+(goes_p5_flx_att*att_com_time)
+goes_p5_cflu= goes_p5_flu+(goes_p5_flx*time_to_com(0))
+goes_p5_c2flu= goes_p5_flu+(goes_p5_flx*time_to_com(1))
+goes_p5_pflu_att= goes_p5_flu_att+(goes_p5_flx*att_time)
+goes_p5_cflu_att= goes_p5_flu_att+(goes_p5_flx*att_com_time)
+goes_p5_c2flu_att= goes_p5_flu_att+(goes_p5_flx*att_com2_time)
 
 goes_e2_flu= goes_e2_flx*elapsed_time
 goes_e2_flx_att= goes_e2_flx*att_factor
 goes_e2_flu_att= goes_e2_flu*att_flu_factor
 goes_e2_pflu= goes_e2_flu+(goes_e2_flx*time_to_rad)
-goes_e2_cflu= goes_e2_flu+(goes_e2_flx*time_to_com)
-goes_e2_pflu_att= goes_e2_flu_att+(goes_e2_flx_att*att_time)
-goes_e2_cflu_att= goes_e2_flu_att+(goes_e2_flx_att*att_com_time)
+goes_e2_cflu= goes_e2_flu+(goes_e2_flx*time_to_com(0))
+goes_e2_c2flu= goes_e2_flu+(goes_e2_flx*time_to_com(1))
+goes_e2_pflu_att= goes_e2_flu_att+(goes_e2_flx*att_time)
+goes_e2_cflu_att= goes_e2_flu_att+(goes_e2_flx*att_com_time)
+goes_e2_c2flu_att= goes_e2_flu_att+(goes_e2_flx*att_com2_time)
 
 line0= strsplit(snapshot(0),"()",/extract)
 line1= strsplit(snapshot(1),/extract)
@@ -249,13 +421,13 @@ printf, OUT, '<h2>Chandra Radiation Environment Summary</h2>'
 printf, OUT, '<br />Orbit start: ',orb_start,' (all times on this page are UTC) <br />'
 printf, OUT, 'Current altitude (km) and orbit leg: ',alt,'<br />'
 printf, OUT, 'Current configuration: ',config,'<br />'
-printf, OUT, 'Next comm: ',next_com,' (',string(time_to_com/3600.0,format='(F4.1)'),' hours )<br />'
+printf, OUT, 'Next comm: ',next_com(0),' (',string(time_to_com(0)/3600.0,format='(F4.1)'),' hours )<br />'
 printf, OUT, 'Next rad zone in ',string(time_to_rad/3600.0,format='(F4.1)'),' hours<br />'
 printf, OUT, 'Last updated: ', systime(/utc),'<br /><br />'
 printf, OUT, '<table border=1>'
-printf, OUT, '<tr><th>&#160</th><th colspan=5>Attenuated * projects fluences based on upcoming SI configuration (grating attenuation coming soon.) </th></tr>
-printf, OUT, '<tr><th>&#160</th><th>2 hr ave. Flux</th><th>Current fluence<br />(total so far in current orbit)</th><th>Projected fluence<br /> until next rad zone</th><th>Projected fluence</th><th>Limits</th>'
-printf, OUT, '<tr><th>&#160</th><th>(p/cm^2-s-sr-MeV)</th><th>(p/cm^2-sr-MeV)</th><th>at current flux<br />(at 2X flux)<br/>*at 10X flux*</th><th>until next comm.</th><th>&#160</th>'
+printf, OUT, '<tr><th>&#160</th><th colspan=5>Attenuated * projects fluences based on upcoming SI and grating configuration </th></tr>
+printf, OUT, '<tr><th>&#160</th><th>2 hr ave. Flux</th><th>Current fluence<br />(total so far in current orbit)</th><th>Projected fluence<br /> until next rad zone</th><th>Projected fluence</th><th>Projected fluence</th><th>Limits</th>'
+printf, OUT, '<tr><th>&#160</th><th>(p/cm^2-s-sr-MeV)</th><th>(p/cm^2-sr-MeV)</th><th>at current flux<br />(at 2X flux)<br/>*at 10X flux*</th><th>until next comm.</th><th>until second comm.</th><th>&#160</th>'
 printf, OUT, '<tr><td>CRM</td>'
 printf, OUT, '<td>',string(crm_flx_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(crm_flu_att,format='(E9.3)'),'</td>'
@@ -263,6 +435,7 @@ printf, OUT, '<td>',string(crm_pflu_att,format='(E9.3)')
 printf, OUT, '<br />(',string(crm_2pflu_att,format='(E9.3)'),')'
 printf, OUT, '<br />*',string(crm_10pflu_att,format='(E9.3)'),'*</td>'
 printf, OUT, '<td>',string(crm_cflu_att,format='(E9.3)'),'</td>'
+printf, OUT, '<td>',string(crm_c2flu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>&#160</td></tr>'
 
 printf, OUT, '<tr><td>ACE P3</td>'
@@ -272,6 +445,7 @@ printf, OUT, '<td>',string(ace_p3_pflu_att,format='(E9.3)')
 printf, OUT, '<br />(',string(ace_p3_2pflu_att,format='(E9.3)'),')'
 printf, OUT, '<br />*',string(ace_p3_10pflu_att,format='(E9.3)'),'*</td>'
 printf, OUT, '<td>',string(ace_p3_cflu_att,format='(E9.3)'),'</td>'
+printf, OUT, '<td>',string(ace_p3_c2flu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>1.000E+09 (fluence)</td></tr>'
 
 printf, OUT, '<tr><td>GOES-13 (P2)</td>'
@@ -279,6 +453,7 @@ printf, OUT, '<td>',string(goes_p2_flx_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p2_flu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p2_pflu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p2_cflu_att,format='(E9.3)'),'</td>'
+printf, OUT, '<td>',string(goes_p2_c2flu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>&#160</td></tr>'
 
 printf, OUT, '<tr><td>GOES-13 (P5)</td>'
@@ -286,6 +461,7 @@ printf, OUT, '<td>',string(goes_p5_flx_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p5_flu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p5_pflu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p5_cflu_att,format='(E9.3)'),'</td>'
+printf, OUT, '<td>',string(goes_p5_c2flu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>&#160</td></tr>'
 
 printf, OUT, '<tr><td>GOES-13 (E > 2.0 MeV)</td>'
@@ -293,6 +469,7 @@ printf, OUT, '<td>',string(goes_e2_flx_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_e2_flu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_e2_pflu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_e2_cflu_att,format='(E9.3)'),'</td>'
+printf, OUT, '<td>',string(goes_e2_c2flu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>&#160</td></tr>'
 
 ;printf, OUT, '<tr><td>CRM3</td>'
@@ -307,13 +484,14 @@ printf, OUT, '<td>&#160</td></tr>'
 
 printf, OUT, '<tr><th colspan=6>&#160</th></tr>
 printf, OUT, '<tr><th>&#160</th><th colspan=5>External - does not take into account the instrument configuration </th></tr>
-printf, OUT, '<tr><th>&#160</th><th>2 hr ave. Flux</th><th>Current fluence <br />(total so far in current orbit)</th><th>Projected fluence</th><th>Projected fluence</th><th>Limits</th>'
-printf, OUT, '<tr><th>&#160</th><th>(p/cm^2-s-sr-MeV)</th><th>(p/cm^2-sr-MeV)</th><th>until next radzone <br />(total for current orbit)</th><th>until next comm.</th><th>&#160</th>'
+printf, OUT, '<tr><th>&#160</th><th>2 hr ave. Flux</th><th>Current fluence <br />(total so far in current orbit)</th><th>Projected fluence</th><th>Projected fluence</th><th>&#160</th><th>Limits</th>'
+printf, OUT, '<tr><th>&#160</th><th>(p/cm^2-s-sr-MeV)</th><th>(p/cm^2-sr-MeV)</th><th>until next radzone <br />(total for current orbit)</th><th>until next comm.</th><th>until second comm.</th><th>&#160</th>'
 printf, OUT, '<tr><td>CRM</td>'
 printf, OUT, '<td>',string(crm_flx,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(crm_flu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(crm_pflu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(crm_cflu,format='(E9.3)'),'</td>'
+printf, OUT, '<td>',string(crm_c2flu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>&#160</td></tr>'
 
 printf, OUT, '<tr><td>ACE P3</td>'
@@ -321,6 +499,7 @@ printf, OUT, '<td>',string(ace_p3_flx,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(ace_p3_flu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(ace_p3_pflu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(ace_p3_cflu,format='(E9.3)'),'</td>'
+printf, OUT, '<td>',string(ace_p3_c2flu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>3.6e8 (2 hr fluence, red)</td></tr>'
 
 printf, OUT, '<tr><td>GOES-13 (P2)</td>'
@@ -328,6 +507,7 @@ printf, OUT, '<td>',string(goes_p2_flx,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p2_flu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p2_pflu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p2_cflu,format='(E9.3)'),'</td>'
+printf, OUT, '<td>',string(goes_p2_c2flu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>30.0/90.9 (flux, yellow/red)</td></tr>'
 
 printf, OUT, '<tr><td>GOES-13 (P5)</td>'
@@ -335,6 +515,7 @@ printf, OUT, '<td>',string(goes_p5_flx,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p5_flu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p5_pflu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_p5_cflu,format='(E9.3)'),'</td>'
+printf, OUT, '<td>',string(goes_p5_c2flu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>0.25/0.70 (flux, yellow/red)</td></tr>'
 
 printf, OUT, '<tr><td>GOES-13 (E > 2.0 MeV)</td>'
@@ -342,6 +523,7 @@ printf, OUT, '<td>',string(goes_e2_flx,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_e2_flu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_e2_pflu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(goes_e2_cflu,format='(E9.3)'),'</td>'
+printf, OUT, '<td>',string(goes_e2_c2flu,format='(E9.3)'),'</td>'
 printf, OUT, '<td>&#160</td></tr>'
 
 printf, OUT, '<tr><td>EPHIN E150 *</td>'
@@ -349,12 +531,14 @@ printf, OUT, '<td>',string(e150,format='(F8.1)'),'</td>'
 printf, OUT, '<td>N/A</td>'
 printf, OUT, '<td>N/A</td>'
 printf, OUT, '<td>N/A</td>'
+printf, OUT, '<td>&#160</td>'
 printf, OUT, '<td>8.0e5 (radmon safing)</td></tr>'
 
 printf, OUT, '<tr><td>EPHIN E1300 *</td>'
 printf, OUT, '<td>',string(e1300,format='(F8.1)'),'</td>'
 printf, OUT, '<td>N/A</td>'
 printf, OUT, '<td>N/A</td>'
+printf, OUT, '<td>&#160</td>'
 printf, OUT, '<td>&#160</td>'
 printf, OUT, '<td>1000 (radmon safing)</td></tr>'
 printf, OUT, '</table>'
@@ -373,3 +557,4 @@ close, OUT
 ;print, "time to com ",time_to_com
 
 end
+
