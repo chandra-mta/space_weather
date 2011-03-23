@@ -1,7 +1,7 @@
 <HR> 
 <li><a href="./alerts/travel_time.gif">Travel Time of CME vs. Initial Speed.</a>
 <!--<li><a href ="http://www.sec.noaa.gov/rpc/costello/"> Costello  </a> Geomagnetic Activity Index-->
-<li><a href ="http://www.swpc.noaa.gov/wingkp/index.html"> Wing Kp  </a> Geomagnetic Activity Index
+<li><a href ="http://www.swpc.noaa.gov/wingkp/index.html"> Wing predictive Kp  </a> Geomagnetic Activity Index
 <!--<li><a href ="http://www.sec.noaa.gov/msm/index.html"> Magnetospheric Specification Model</a> Latest MSM Output-->
 <li><a href ="alerts/ace.archive"> 3-day archive </a>of the latest ACE data.
 <li><a href="alerts/fluence.dat"> Latest orbital fluence when CHANDRA is above 70kkm. </a>
