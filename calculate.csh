@@ -82,12 +82,12 @@ if ($count > 28) then
 /opt/local/bin/convert -negate $WEBdir/Mag_swe_7d.gif $WEBdir/Mag_swe_7di.gif
 
 #go and collect Kp image 
-/opt/local/bin/lynx -source http://www.sec.noaa.gov/rpc/costello/pkp_15m_7d.html | tail -9 | head -1 > ! $SPACE_Wdir/tmpkp
-sed s/'<CENTER><IMG SRC="'/''/1 $SPACE_Wdir/tmpkp | sed s/'"><'/' '/1 | sed s/'\/CENTER>'/''/1 >! $SPACE_Wdir/kpimagename
-set image_varkp=`cat $SPACE_Wdir/kpimagename`
+#/opt/local/bin/lynx -source http://www.sec.noaa.gov/rpc/costello/pkp_15m_7d.html | tail -9 | head -1 > ! $SPACE_Wdir/tmpkp
+#sed s/'<CENTER><IMG SRC="'/''/1 $SPACE_Wdir/tmpkp | sed s/'"><'/' '/1 | sed s/'\/CENTER>'/''/1 >! $SPACE_Wdir/kpimagename
+#set image_varkp=`cat $SPACE_Wdir/kpimagename`
 
-/opt/local/bin/lynx -source http://www.sec.noaa.gov/rpc/costello/$image_varkp >!  $WEBdir/costello.gif
-/opt/local/bin/convert -negate  $WEBdir/costello.gif - >! $WEBdir/costello_i.gif
+/opt/local/bin/lynx -source http://www.swpc.noaa.gov/wingkp/wingkp_15m_24h.gif >!  $WEBdir/wingkp.gif
+/opt/local/bin/convert -negate  $WEBdir/wingkp.gif - >! $WEBdir/wingkp_i.gif
 
 
 
@@ -99,7 +99,7 @@ set image_varkp=`cat $SPACE_Wdir/kpimagename`
 
 #sec #echo '<HR><CENTER><IMG SRC="http://sec.noaa.gov/ace/'$image_var'"></CENTER>' >! $SPACE_Wdir/image
 #echo '<HR><CENTER><IMG SRC="http://www.sec.noaa.gov/ace/Epam_7d.gif'"></CENTER>' >! $SPACE_Wdir/image2
-/opt/local/bin/lynx -source http://www.sec.noaa.gov/rpc/costello/$image_varkp | /opt/local/bin/convert -negate - - >! test.gif
+#/opt/local/bin/lynx -source http://www.sec.noaa.gov/rpc/costello/$image_varkp | /opt/local/bin/convert -negate - - >! test.gif
 #sec #echo '<HR><CENTER><IMG SRC="http://www.sec.noaa.gov/rpc/costello/'$image_varkp'"></CENTER>' >! $SPACE_Wdir/kpimage
 #echo '<HR><CENTER><IMG SRC="http://www.sec.noaa.gov/rpc/costello/'$image_varkp'"></CENTER>' >! $SPACE_Wdir/kpimage
 
