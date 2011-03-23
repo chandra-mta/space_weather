@@ -15,9 +15,9 @@ fmt1="%4d %2d %2d %4d %4d %2d %2d %6d %11.3f %11.3f %11.3f\n"
 
 fmt2="%20s %14.2f  \n"
 
-print "                            15-minute Costello Geomagnetic Activity Index"
+print "                            15-minute Wing Kp Geomagnetic Activity Index"
 print " "
-print " "
+print "                                           1-hour"
 print " UT Date   Time         -Predicted Time-  Predicted  Lead-time  USAF Est."
 print "  YR MO DA  HHMM   S     YR MO DA  HHMMSS    Index    in Minutes     Kp "
 print "-------------------------------------------------------------------------"
@@ -30,7 +30,7 @@ print "-------------------------------------------------------------------------
 {
 
 #print $1" "$2" "$3" "$4" "$5" "$6" "$7"  "$8" "$9" "$10" "$11" "$12" "$13" "$14" "$15" "$16
-printf(fmt1, $1, $2, $3, $4, $6,$7,$8,$9,$10,$11,$12)
+printf(fmt1, $1, $2, $3, $4, $6,$7,$8,$9,$10,$11,$18)
 
 	if ($5 == 0){ 
 		i += 1.
@@ -44,7 +44,7 @@ printf(fmt1, $1, $2, $3, $4, $6,$7,$8,$9,$10,$11,$12)
 		if ($4 > time2)   time2 = $4
 		if ($10 > PREDI)    PREDI = $10
 		if ($11 < LIT)  LIT = $11
-		if ($12 > ESTKP)  ESTKP = $12
+		if ($18 > ESTKP)  ESTKP = $18
 		}
 
 
@@ -83,7 +83,7 @@ print " "
 printf(fmt2, "COSTELLO MAXIMUM:", PREDI)
 printf(fmt2, "USAF MAXIMUM:", ESTKP)
 printf(fmt2, "MINIMUM LEAD TIME:", PREDI,LIT,ESTKP)
-print(PREDI, ESTKP)
+#print(PREDI, ESTKP)
 #printf(fmt2, "FLUENCE", E38f,E175f,P56f,P130f,P337f,P761f,P1073f)
 #
 } 
