@@ -80,9 +80,9 @@ print " "
 
 
 #printf(fmt2, "AVERAGE", E38a,E175a,P56a,P130a,P337a,P761a,P1073a)
-printf(fmt2, "COSTELLO MAXIMUM:", PREDI)
+printf(fmt2, "MINIMUM LEAD TIME:", LIT)
+printf(fmt2, "WING KP MAXIMUM:", PREDI)
 printf(fmt2, "USAF MAXIMUM:", ESTKP)
-printf(fmt2, "MINIMUM LEAD TIME:", PREDI,LIT,ESTKP)
 #print(PREDI, ESTKP)
 #printf(fmt2, "FLUENCE", E38f,E175f,P56f,P130f,P337f,P761f,P1073f)
 #

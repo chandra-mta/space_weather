@@ -139,7 +139,8 @@ if (! defined $kp) {
 system("/data/mta4/space_weather/calculate_kp.csh");
 open (EF, $CUR_KP_file) or die "Cannot open current_Kp.txt\n";
 @observed_kp = split ' ',<EF> ;
-$af_kp = $observed_kp[1];
+$af_kp = $observed_kp[2];
+#print "KP $af_kp\n";
 
 #print "Observed Air Force Kp = $af_kp\n";
 
