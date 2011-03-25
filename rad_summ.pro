@@ -316,7 +316,7 @@ e150 = line(11)
 line= strsplit(snapshot(20),/extract)
 e1300 = line(7)
 
-openw, OUT, "rad_summ_att.html", /get_lun
+openw, OUT, "rad_summ.html", /get_lun
 printf, OUT, '<html><head><title>Chandra Radiation Summary</title></head>'
 printf, OUT, '<body bgcolor="#000000" text="#eeeeee">'
 printf, OUT, '<h2>Chandra Radiation Environment Summary</h2>'
