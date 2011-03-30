@@ -54,6 +54,7 @@ while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
   if (rdb_start_test gt stopt) then found=1
   i=i+1
 endwhile
+if (grat_time eq 0) then grat_time=1
 print, "Grat time ",grat_time,startt,stopt
 return, grat_time
 end
@@ -83,24 +84,28 @@ while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
   mm=rdb_time(3)
   rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
   if (rdb_start_test lt startt and rdb_stop_test gt startt and rdb_stop_test lt stopt) then begin
-    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0L) then begin
       att_time=att_time+(((rdb_stop_test-startt)/duration)*calc_grat_att(startt,rdb_stop_test))
+      print, "ACIS 1 ", rdb_dat(i).SIMTRANS_POS
     endif
   endif
   if (rdb_start_test lt startt and rdb_stop_test gt startt and rdb_stop_test gt stopt) then begin
-    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0L) then begin
       att_time = att_time+calc_grat_att(startt,stopt)
+      print, "ACIS 2"
       found=1
     endif
   endif
   if (found eq 0 and rdb_start_test gt startt and rdb_stop_test lt stopt) then begin
-    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0L) then begin
       att_time = att_time+(((rdb_stop_test-rdb_start_test)/duration)*calc_grat_att(rdb_start_test,rdb_stop_test))
+      print, "ACIS 3"
     endif
   endif
   if (found eq 0 and rdb_start_test gt startt and rdb_stop_test gt stopt) then begin
-    if (rdb_dat(i).SIMTRANS_POS gt 0) then begin
+    if (rdb_dat(i).SIMTRANS_POS gt 0L) then begin
       att_time = att_time+(((stopt-rdb_start_test)/duration)*calc_grat_att(rdb_start_test,stopt))
+      print, "ACIS 4"
       found=1
     endif
   endif
@@ -248,9 +253,9 @@ endwhile
 print, "found com ", i, next_com(0),jcom_start(0),jday,time_to_com(0)
 print, "found com ", i, next_com(1),jcom_start(1),jday,time_to_com(1)
 
-att_time=time_to_rad*calc_att(jday,rad_end)
-att_com_time=time_to_com(0)*calc_att(jday,jcom_start(0))
-att_com2_time=time_to_com(1)*calc_att(jday,jcom_start(1))
+att_time=max([long(time_to_rad)*calc_att(jday,rad_end),0])
+att_com_time=max([long(time_to_com(0))*calc_att(jday,jcom_start(0)),0])
+att_com2_time=max([long(time_to_com(1))*calc_att(jday,jcom_start(1)),0])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 if (time_to_rad lt 0) then time_to_rad = 0
@@ -266,15 +271,18 @@ crm_2pflu_att= crm_flu_att+(crm_flx*att_time*2)
 crm_10pflu_att= crm_flu_att+(crm_flx*att_time*10)
 crm_cflu_att= crm_flu_att+(crm_flx*att_com_time)
 crm_c2flu_att= crm_flu_att+(crm_flx*att_com2_time)
+crm_pflu_att= crm_flu_att+(crm_flx*att_time)
 
 ace_p3_pflu= ace_p3_flu+(ace_p3_flx*time_to_rad)
 ace_p3_cflu= ace_p3_flu+(ace_p3_flx*time_to_com(0))
 ace_p3_c2flu= ace_p3_flu+(ace_p3_flx*time_to_com(1))
-ace_p3_pflu_att= ace_p3_flu_att+(ace_p3_flx*att_time)
-ace_p3_2pflu_att= ace_p3_flu_att+(ace_p3_flx*att_time*2)
-ace_p3_10pflu_att= ace_p3_flu_att+(ace_p3_flx*att_time*10)
-ace_p3_cflu_att= ace_p3_flu_att+(ace_p3_flx*att_com_time)
-ace_p3_c2flu_att= ace_p3_flu_att+(ace_p3_flx*att_com2_time)
+ace_p3_pflu_att= ace_p3_flu_att+(long64(ace_p3_flx)*long64(att_time))
+ace_p3_2pflu_att= ace_p3_flu_att+(long64(ace_p3_flx)*long64(att_time*2))
+ace_p3_10pflu_att= ace_p3_flu_att+(long64(ace_p3_flx)*long64(att_time*10))
+ace_p3_cflu_att= ace_p3_flu_att+(long64(ace_p3_flx)*long64(att_com_time))
+ace_p3_c2flu_att= ace_p3_flu_att+(long64(ace_p3_flx)*long64(att_com2_time))
+print,"test ",ace_p3_cflu_att,ace_p3_flu_att,ace_p3_flx_att,att_com_time
+print,"test ",long64(ace_p3_flx_att)*long64(att_com_time)
 
 goes_p2_flu= goes_p2_flx*elapsed_time
 goes_p2_flx_att= goes_p2_flx*att_factor
