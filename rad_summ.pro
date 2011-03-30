@@ -328,7 +328,7 @@ printf, OUT, 'Next comm: ',next_com(0),' (',string(time_to_com(0)/3600.0,format=
 printf, OUT, 'Next rad zone: ',rad_end_str,' (',string(time_to_rad/3600.0,format='(F4.1)'),' hours) <br />'
 printf, OUT, 'Last updated: ', systime(/utc),'<br /><br />'
 printf, OUT, '<table border=1>'
-printf, OUT, '<tr><th>&#160</th><th colspan=6>Attenuated * projects fluences based on upcoming SI and grating configuration'
+printf, OUT, '<tr><th>&#160</th><th colspan=6>Attenuated - projects fluences based on upcoming SI and grating configuration'
 printf, OUT, '<br />ACIS effective exposure times (ks) '
 ;printf, OUT, '<br />ACIS effective exposure times (ks) &#160 &#160This orbit so far: ',string(calc_elapsed_time/1000.0,format='(F8.1)')
 printf, OUT, '&#160 &#160 Until next radzone: ',string(att_time/1000.0,format='(F7.1)')
@@ -354,7 +354,7 @@ printf, OUT, '<br />(',string(ace_p3_2pflu_att,format='(E9.3)'),')'
 printf, OUT, '<br />*',string(ace_p3_10pflu_att,format='(E9.3)'),'*</td>'
 printf, OUT, '<td>',string(ace_p3_cflu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(ace_p3_c2flu_att,format='(E9.3)'),'</td>'
-printf, OUT, '<td>1.000E+09 (fluence)</td></tr>'
+printf, OUT, '<td>alert trigger:<br />1.000E+09 (fluence)</td></tr>'
 
 printf, OUT, '<tr><td>GOES-13 (P2)</td>'
 printf, OUT, '<td>',string(goes_p2_flx_att,format='(E9.3)'),'</td>'
@@ -451,7 +451,7 @@ printf, OUT, '<td>&#160</td>'
 printf, OUT, '<td>1000 (radmon safing)</td></tr>'
 printf, OUT, '</table>'
 
-printf, OUT, '<br />The current fluence is calculated from the beginning on the current orbit. The ACE P3 external fluence starts integrating above 70 kkm.'
+printf, OUT, '<br />The current fluence is calculated from the beginning on the current orbit. The ACE P3 external fluence starts integrating above 10 kkm.'
 ;printf, OUT, '<br />The projected fluence is the total until the end of the orbit given the current flux.  (should be until rad zone entry)
 printf, OUT, '<br />* EPHIN "fluxes" are raw counts as of the last support ['
 printf, OUT, snap_time
