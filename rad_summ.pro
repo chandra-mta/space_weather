@@ -6,7 +6,26 @@ rdb_dat=rdb_read(files(n_elements(files)-1))
 found=0
 i=0
 grat_time=0
-duration=stopt-startt
+if (n_elements(rdb_dat) eq 1) then begin ; no future moves, use current state
+  rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
+  yr=rdb_time(0)
+  dd=rdb_time(1)
+  hh=rdb_time(2)
+  mm=rdb_time(3)
+  print, yr,dd,hh,mm
+  rdb_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  if (rdb_start_test lt startt) then begin
+    case rdb_dat(i).GRATING_GRATING of
+      "NONE": grat_time=grat_time+(stopt-startt)
+      "HETG": grat_time=grat_time+(stopt-startt)*0.2
+      "LETG": grat_time=grat_time+(stopt-startt)*0.5
+    endcase
+    print, "Grat 0 ", grat_time
+    return, max([grat_time,0])
+  endif
+  print, "Error finding grating position"
+  return, 0
+endif
 while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
   rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
   yr=rdb_time(0)
@@ -23,40 +42,39 @@ while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
   rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
   if (rdb_start_test lt startt and rdb_stop_test gt startt and rdb_stop_test lt stopt) then begin
     case rdb_dat(i).GRATING_GRATING of
-      "NONE": grat_time=grat_time+((rdb_stop_test-startt)/duration)
-      "HETG": grat_time=grat_time+((rdb_stop_test-startt)/duration)*0.2
-      "LETG": grat_time=grat_time+((rdb_stop_test-startt)/duration)*0.5
+      "NONE": grat_time=grat_time+(rdb_stop_test-startt)
+      "HETG": grat_time=grat_time+(rdb_stop_test-startt)*0.2
+      "LETG": grat_time=grat_time+(rdb_stop_test-startt)*0.5
     endcase
   endif
   if (rdb_start_test lt startt and rdb_stop_test gt startt and rdb_stop_test gt stopt) then begin
     case rdb_dat(i).GRATING_GRATING of
-      "NONE": grat_time=grat_time+1
-      "HETG": grat_time=grat_time+0.2
-      "LETG": grat_time=grat_time+0.5
+      "NONE": grat_time=grat_time+(stopt-startt)
+      "HETG": grat_time=grat_time+(stopt-startt)*0.2
+      "LETG": grat_time=grat_time+(stopt-startt)*0.5
     endcase
     found=1
   endif
   if (found eq 0 and rdb_start_test gt startt and rdb_stop_test lt stopt) then begin
     case rdb_dat(i).GRATING_GRATING of
-      "NONE": grat_time=grat_time+((rdb_stop_test-rdb_start_test)/duration)
-      "HETG": grat_time=grat_time+((rdb_stop_test-rdb_start_test)/duration)*0.2
-      "LETG": grat_time=grat_time+((rdb_stop_test-rdb_start_test)/duration)*0.5
+      "NONE": grat_time=grat_time+(rdb_stop_test-rdb_start_test)
+      "HETG": grat_time=grat_time+(rdb_stop_test-rdb_start_test)*0.2
+      "LETG": grat_time=grat_time+(rdb_stop_test-rdb_start_test)*0.5
     endcase
   endif
   if (found eq 0 and rdb_start_test gt startt and rdb_stop_test gt stopt) then begin
     case rdb_dat(i).GRATING_GRATING of
-      "NONE": grat_time=grat_time+((stopt-rdb_start_test)/duration)
-      "HETG": grat_time=grat_time+((stopt-rdb_start_test)/duration)*0.2
-      "LETG": grat_time=grat_time+((stopt-rdb_start_test)/duration)*0.5
+      "NONE": grat_time=grat_time+(stopt-rdb_start_test)
+      "HETG": grat_time=grat_time+(stopt-rdb_start_test)*0.2
+      "LETG": grat_time=grat_time+(stopt-rdb_start_test)*0.5
     endcase
     found=1
   endif
   if (rdb_start_test gt stopt) then found=1
   i=i+1
 endwhile
-if (grat_time eq 0) then grat_time=1
 print, "Grat time ",grat_time,startt,stopt
-return, grat_time
+return, max([grat_time,0])
 end
 
 FUNCTION calc_att, startt,stopt
@@ -68,7 +86,6 @@ rdb_dat=rdb_dat(where(rdb_dat.Type_Description eq "SIM Translation"))
 found=0
 i=0
 att_time=0
-duration=stopt-startt
 while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
   rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
   yr=rdb_time(0)
@@ -85,27 +102,27 @@ while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
   rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
   if (rdb_start_test lt startt and rdb_stop_test gt startt and rdb_stop_test lt stopt) then begin
     if (rdb_dat(i).SIMTRANS_POS gt 0L) then begin
-      att_time=att_time+(((rdb_stop_test-startt)/duration)*calc_grat_att(startt,rdb_stop_test))
-      print, "ACIS 1 ", rdb_dat(i).SIMTRANS_POS
+      att_time=att_time+calc_grat_att(startt,rdb_stop_test)
+      print, "ACIS 1 ", rdb_dat(i).SIMTRANS_POS, att_time
     endif
   endif
   if (rdb_start_test lt startt and rdb_stop_test gt startt and rdb_stop_test gt stopt) then begin
     if (rdb_dat(i).SIMTRANS_POS gt 0L) then begin
       att_time = att_time+calc_grat_att(startt,stopt)
-      print, "ACIS 2"
+      print, "ACIS 2", att_time
       found=1
     endif
   endif
   if (found eq 0 and rdb_start_test gt startt and rdb_stop_test lt stopt) then begin
     if (rdb_dat(i).SIMTRANS_POS gt 0L) then begin
-      att_time = att_time+(((rdb_stop_test-rdb_start_test)/duration)*calc_grat_att(rdb_start_test,rdb_stop_test))
-      print, "ACIS 3"
+      att_time = att_time+calc_grat_att(rdb_start_test,rdb_stop_test)
+      print, "ACIS 3", att_time
     endif
   endif
   if (found eq 0 and rdb_start_test gt startt and rdb_stop_test gt stopt) then begin
     if (rdb_dat(i).SIMTRANS_POS gt 0L) then begin
-      att_time = att_time+(((stopt-rdb_start_test)/duration)*calc_grat_att(rdb_start_test,stopt))
-      print, "ACIS 4"
+      att_time = att_time+calc_grat_att(rdb_start_test,stopt)
+      print, "ACIS 4", att_time
       found=1
     endif
   endif
@@ -113,7 +130,7 @@ while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
   i=i+1
 endwhile
 print, "ATT_TIME ", att_time,startt,stopt
-return, att_time
+return, max([att_time*86400L,0])
 end
 
 PRO RAD_SUMM
@@ -253,10 +270,14 @@ endwhile
 print, "found com ", i, next_com(0),jcom_start(0),jday,time_to_com(0)
 print, "found com ", i, next_com(1),jcom_start(1),jday,time_to_com(1)
 
-att_elapsed_time=max([long(calc_elapsed_time)*calc_att(rad_start,jday),0])
-att_time=max([long(time_to_rad)*calc_att(jday,rad_end),0])
-att_com_time=max([long(time_to_com(0))*calc_att(jday,jcom_start(0)),0])
-att_com2_time=max([long(time_to_com(1))*calc_att(jday,jcom_start(1)),0])
+print, "CALCULATING ELAPSED TIME"
+att_elapsed_time=max([calc_att(rad_start,jday),0])
+print, "CALCULATING RAD TIME"
+att_time=max([calc_att(jday,rad_end),0])
+print, "CALCULATING COM TIME"
+att_com_time=max([calc_att(jday,jcom_start(0)),0])
+print, "CALCULATING COM2 TIME"
+att_com2_time=max([calc_att(jday,jcom_start(1)),0])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 if (time_to_rad lt 0) then time_to_rad = 0
