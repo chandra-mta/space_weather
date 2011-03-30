@@ -253,6 +253,7 @@ endwhile
 print, "found com ", i, next_com(0),jcom_start(0),jday,time_to_com(0)
 print, "found com ", i, next_com(1),jcom_start(1),jday,time_to_com(1)
 
+att_elapsed_time=max([long(calc_elapsed_time)*calc_att(rad_start,jday),0])
 att_time=max([long(time_to_rad)*calc_att(jday,rad_end),0])
 att_com_time=max([long(time_to_com(0))*calc_att(jday,jcom_start(0)),0])
 att_com2_time=max([long(time_to_com(1))*calc_att(jday,jcom_start(1)),0])
@@ -338,7 +339,7 @@ printf, OUT, 'Last updated: ', systime(/utc),'<br /><br />'
 printf, OUT, '<table border=1>'
 printf, OUT, '<tr><th>&#160</th><th colspan=6>Attenuated - projects fluences based on upcoming SI and grating configuration'
 printf, OUT, '<br />ACIS effective exposure times (ks) '
-;printf, OUT, '<br />ACIS effective exposure times (ks) &#160 &#160This orbit so far: ',string(calc_elapsed_time/1000.0,format='(F8.1)')
+printf, OUT, '&#160 &#160This orbit so far: ',string(att_elapsed_time/1000.0,format='(F8.1)')
 printf, OUT, '&#160 &#160 Until next radzone: ',string(att_time/1000.0,format='(F7.1)')
 printf, OUT, '&#160 &#160 Until next comm: ',string(att_com_time/1000.0,format='(F7.1)')
 printf, OUT, '</th></tr>'
