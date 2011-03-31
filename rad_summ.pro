@@ -1,8 +1,14 @@
 FUNCTION calc_grat_att, startt,stopt
 ; find attenuation factor between startt and stopt (in julian days)
 files=findfile('/proj/sot/ska/data/arc/iFOT_events/grating/*.rdb')
-print, "GRAT file ", files(n_elements(files)-1)
 rdb_dat=rdb_read(files(n_elements(files)-1))
+j=1
+while (rdb_dat(0).(1) eq "NULL") do begin ; find last valid file
+  print,"grat file ",n_elements(files)," ",j
+  j=j+1
+  rdb_dat=rdb_read(files(n_elements(files)-j))
+endwhile
+print, "GRAT file ", files(n_elements(files)-j)
 found=0
 i=0
 grat_time=0
@@ -178,16 +184,16 @@ line= strsplit(infile(14),":",/extract)
 crm_flu_att = float(line(1))
 
 line= strsplit(ace(4),/extract)
-ace_p3_flx = line(11)
+ace_p3_flx = float(line(11))
 
 line= strsplit(ace(6),/extract)
-ace_p3_flu = line(9)
+ace_p3_flu = float(line(9))
 
 line= strsplit(acis(n_elements(acis)-3),/extract)
-ace_p3_flx_att = line(9)
+ace_p3_flx_att = float(line(9))
 
 line= strsplit(acis(n_elements(acis)-1),/extract)
-ace_p3_flu_att = line(9)
+ace_p3_flu_att = float(line(9))
 
 att_factor= crm_flx_att/crm_flx
 att_flu_factor= crm_flu_att/crm_flu
@@ -360,7 +366,7 @@ printf, OUT, 'Last updated: ', systime(/utc),'<br /><br />'
 printf, OUT, '<table border=1>'
 printf, OUT, '<tr><th>&#160</th><th colspan=6>Attenuated - projects fluences based on upcoming SI and grating configuration'
 printf, OUT, '<br />ACIS effective exposure times (ks) '
-printf, OUT, '&#160 &#160This orbit so far: ',string(att_elapsed_time/1000.0,format='(F8.1)')
+;printf, OUT, '&#160 &#160This orbit so far: ',string(att_elapsed_time/1000.0,format='(F8.1)')
 printf, OUT, '&#160 &#160 Until next radzone: ',string(att_time/1000.0,format='(F7.1)')
 printf, OUT, '&#160 &#160 Until next comm: ',string(att_com_time/1000.0,format='(F7.1)')
 printf, OUT, '</th></tr>'
@@ -491,7 +497,7 @@ printf, OUT, '<img src="/mta/RADIATION/CRM2/crmplatt.gif">'
 
 printf, OUT, '</body></html>
 
-close, OUT
+free_lun, OUT
 ;print, "time to com ",time_to_com
 
 end
