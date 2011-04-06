@@ -3,10 +3,8 @@ FUNCTION calc_grat_att, startt,stopt
 files=findfile('/proj/sot/ska/data/arc/iFOT_events/grating/*.rdb')
 rdb_dat=rdb_read(files(n_elements(files)-1))
 j=1
-while (rdb_dat(0).(1) eq "NULL") do begin ; find last valid file
-  print,"grat file ",n_elements(files)," ",j
-  j=j+1
-  rdb_dat=rdb_read(files(n_elements(files)-j))
+while (rdb_dat(0).(1) eq "NULL") do begin ; no valid data, assume no gratings
+  return,max([stopt-startt,0])
 endwhile
 print, "GRAT file ", files(n_elements(files)-j)
 found=0
