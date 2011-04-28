@@ -352,10 +352,11 @@ e1300 = line(7)
 
 openw, OUT, "rad_summ.html", /get_lun
 printf, OUT, '<html><head><title>Chandra Radiation Summary</title></head>'
-printf, OUT, '<body bgcolor="#000000" text="#eeeeee">'
+printf, OUT, '<body bgcolor="#000000" text="#eeeeee" link="#eeeeee" vlink="#eeeeee">'
 printf, OUT, '<h2>Chandra Radiation Environment Summary</h2>'
+printf, OUT, ' See <a href="about_rad_summ.html">about rad_summ</a> for the definition and origin of the values below.<br/>'
 ;printf, OUT, '<br />Orbit start: ', yy, mm, dd, hm,'<br />'
-printf, OUT, '<br />Orbit start: ',orb_start,' (all times on this page are UTC) <br />'
+printf, OUT, '<br />Orbit start: ',orb_start,' (all times on this page are UTC)<br /> '
 printf, OUT, 'Current altitude (km) and orbit leg: ',alt,'<br />'
 printf, OUT, 'Current configuration: ',config,'<br />'
 printf, OUT, 'Next comm: ',next_com(0),' (',string(time_to_com(0)/3600.0,format='(F4.1)'),' hours) <br />'

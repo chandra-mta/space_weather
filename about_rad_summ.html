@@ -1,0 +1,44 @@
+<HTML>
+<HEAD>
+   <TITLE>About the Chandra Radiation Environment Summary </TITLE>
+</HEAD>
+<BODY TEXT="#DDDDDD" BGCOLOR="#000000" LINK="#FF0000" VLINK="#FFFF22" 
+ALINK="#7500FF">
+
+<center>
+<H2>
+About the Chandra Radiation Environment Summary
+</h2>
+</center>
+<br>
+<br>
+See also<br />
+<a href="http://cxc.cfa.harvard.edu/acis/reb/OnRadiation.html"> ACIS Ops Response to Radiation Events</a><br />
+<a href="http://cxc.harvard.edu/mta/alerts/about_ace_page.html"> About ACE Monitoring</a><br />
+
+<br />
+Current orbit start, configuration, and current fluxes/orbital (CRM and Goes) fluences come from /proj/rac/ops/CRM3/CRMsummary.dat<br />
+EPHIN rates come from /pool14/chandra/chandra_psi.snapshot<br />
+Current unattenuated ACE comes from /proj/rac/ops/ACE/fluace.dat<br />
+Current ACE attenuated data comes from /export/acis-flight/FLU-MON/current.dat<br />
+<br />
+Upcoming spacecraft configuration and radzones come from /proj/sot/ska/data/arc/iFOT_events files.<br />
+<br />
+We calculate the attenuation factors to be used for GOES calculations from the CRM data:<br />
+att_factor= crm_flx_att/crm_flx<br />
+att_flu_factor= crm_flu_att/crm_flu<br />
+<br />
+Future attenuated fluences until the next comm, second comm, and next radzone entry based on the upcoming configuration so that:<br />
+<br />
+future_attenuated_fluence = current_attenuated_fluence + (curr_unattenuated_flux * future_attenuation_factor)<br />
+where<br />
+future_attenuation_factor = hrc_time*0 + acis_bare_time*1 + acis_hetg_time*0.2 + acis_letg_time*0.5<br />
+
+<hr />
+
+
+
+
+Last updated: 04/20/11
+</body>
+</html>
