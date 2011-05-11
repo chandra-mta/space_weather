@@ -380,6 +380,7 @@ printf, OUT, '<br />*',string(crm_10pflu_att,format='(E9.3)'),'*</td>'
 printf, OUT, '<td>',string(crm_cflu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(crm_c2flu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>&#160</td></tr>'
+printf, OUT, '<td>working yellow limit:<br />1.000E+09 (fluence)</td></tr>'
 
 printf, OUT, '<tr><td>ACE P3</td>'
 printf, OUT, '<td>',string(ace_p3_flx_att,format='(E9.3)'),'</td>'
