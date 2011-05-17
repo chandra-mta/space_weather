@@ -30,7 +30,7 @@ if (n_elements(rdb_dat) eq 1) then begin ; no future moves, use current state
   print, "Error finding grating position"
   return, 0
 endif
-while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
+while (found eq 0 and i le n_elements(rdb_dat)-1) do begin
   rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
   yr=rdb_time(0)
   dd=rdb_time(1)
@@ -38,13 +38,19 @@ while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
   mm=rdb_time(3)
   print, yr,dd,hh,mm
   rdb_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
-  rdb_time = strsplit(rdb_dat(i+1).TStart_GMT,":",/extract)
-  yr=rdb_time(0)
-  dd=rdb_time(1)
-  hh=rdb_time(2)
-  mm=rdb_time(3)
-  rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  if (i lt n_elements(rdb_dat)-1) then begin
+    rdb_time = strsplit(rdb_dat(i+1).TStart_GMT,":",/extract)
+    yr=rdb_time(0)
+    dd=rdb_time(1)
+    hh=rdb_time(2)
+    mm=rdb_time(3)
+    rdb_stop_test= date_conv([yr,dd,hh,mm,'00'],"J")
+  endif else begin
+    rdb_stop_test= rdb_start_test+10
+  endelse
+  print, yr,dd,hh,mm," ", rdb_start_test, rdb_stop_test, startt, stopt
   if (rdb_start_test lt startt and rdb_stop_test gt startt and rdb_stop_test lt stopt) then begin
+print,"grat 1"
     case rdb_dat(i).GRATING_GRATING of
       "NONE": grat_time=grat_time+(rdb_stop_test-startt)
       "HETG": grat_time=grat_time+(rdb_stop_test-startt)*0.2
@@ -52,6 +58,7 @@ while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
     endcase
   endif
   if (rdb_start_test lt startt and rdb_stop_test gt startt and rdb_stop_test gt stopt) then begin
+print,"grat 2"
     case rdb_dat(i).GRATING_GRATING of
       "NONE": grat_time=grat_time+(stopt-startt)
       "HETG": grat_time=grat_time+(stopt-startt)*0.2
@@ -60,6 +67,7 @@ while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
     found=1
   endif
   if (found eq 0 and rdb_start_test gt startt and rdb_stop_test lt stopt) then begin
+print,"grat 3"
     case rdb_dat(i).GRATING_GRATING of
       "NONE": grat_time=grat_time+(rdb_stop_test-rdb_start_test)
       "HETG": grat_time=grat_time+(rdb_stop_test-rdb_start_test)*0.2
@@ -67,6 +75,7 @@ while (found eq 0 and i lt n_elements(rdb_dat)-2) do begin
     endcase
   endif
   if (found eq 0 and rdb_start_test gt startt and rdb_stop_test gt stopt) then begin
+print,"grat 4"
     case rdb_dat(i).GRATING_GRATING of
       "NONE": grat_time=grat_time+(stopt-rdb_start_test)
       "HETG": grat_time=grat_time+(stopt-rdb_start_test)*0.2
@@ -198,6 +207,7 @@ att_flu_factor= crm_flu_att/crm_flu
 ;calc_elapsed_time= crm_flu/crm_flx
 
 jday= systime(/julian,/utc)
+print, "current JDAY ", jday
 jorb_start= date_conv(strsplit(orb_start,":",/extract),"J")
 elapsed_time=(jday-jorb_start)*86400L
 time_to_per=orb_time-elapsed_time
@@ -379,7 +389,6 @@ printf, OUT, '<br />(',string(crm_2pflu_att,format='(E9.3)'),')'
 printf, OUT, '<br />*',string(crm_10pflu_att,format='(E9.3)'),'*</td>'
 printf, OUT, '<td>',string(crm_cflu_att,format='(E9.3)'),'</td>'
 printf, OUT, '<td>',string(crm_c2flu_att,format='(E9.3)'),'</td>'
-printf, OUT, '<td>&#160</td></tr>'
 printf, OUT, '<td>working yellow limit:<br />1.000E+09 (fluence)</td></tr>'
 
 printf, OUT, '<tr><td>ACE P3</td>'
