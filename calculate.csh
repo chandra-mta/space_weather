@@ -73,6 +73,7 @@ if ($count > 28) then
 #go collect ACE image and invert. 
 /opt/local/bin/lynx -source http://www.sec.noaa.gov/ace/Epam_7d.gif | /opt/local/bin/convert -negate - - >! $WEBdir/Epam_7di.gif
 /opt/local/bin/lynx -source http://www.sec.noaa.gov/ace/Epam_7d.gif >!  $WEBdir/Epam_7d.gif
+/opt/local/bin/lynx -source http://www.sec.noaa.gov/ace/Epam_7d.gif >!  $WEBdir/mta_ace_plot.gif
 /opt/local/bin/convert -negate $WEBdir/Epam_7d.gif $WEBdir/Epam_7di.gif
 /opt/local/bin/convert -negate $WEBdir/mta_ace_plot.gif $WEBdir/Epam_7di.gif
 /opt/local/bin/convert -negate $WEBdir/mta_ace_plot_P3.gif $WEBdir/Epam_7di_P3.gif
