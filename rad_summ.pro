@@ -10,6 +10,16 @@ print, "GRAT file ", files(n_elements(files)-j)
 found=0
 i=0
 grat_time=0
+; if file starts after stopt, assume no gratings
+rdb_time = strsplit(rdb_dat(0).TStart_GMT,":",/extract)
+yr=rdb_time(0)
+dd=rdb_time(1)
+hh=rdb_time(2)
+mm=rdb_time(3)
+print, yr,dd,hh,mm
+rdb_start_test= date_conv([yr,dd,hh,mm,'00'],"J")
+print, "finding rdb_start_test ", startt, stopt
+if (rdb_start_test gt stopt) then return, max([stopt-startt,0])
 if (n_elements(rdb_dat) eq 1) then begin ; no future moves, use current state
   rdb_time = strsplit(rdb_dat(i).TStart_GMT,":",/extract)
   yr=rdb_time(0)
