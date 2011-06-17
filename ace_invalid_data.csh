@@ -13,8 +13,8 @@ set lock = "/pool1/mta/prot_data_violate"
 
       echo "see http://cxc.harvard.edu/mta/ace.html" >> $lock
 
-      echo "This message sent to sot_yellow_alert" >> $lock
-      cat $lock | mailx -s ACE_data_invalid sot_yellow_alert
+      echo "This message sent to sot_lead acisdude sodell brad" >> $lock
+      cat $lock | mailx -s ACE_data_invalid brad\@head.cfa.harvard.edu,sot_lead\@head.cfa.harvard.edu,acisdude\@head.cfa.harvard.edu,steve.odell\@msfc.nasa.gov
       cat $lock | mailx -s ACE_data_invalid 6172573986\@mobile.mycingular.com
     endif
 
