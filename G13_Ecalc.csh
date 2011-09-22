@@ -41,7 +41,7 @@ set file = http://www.swpc.noaa.gov/ftpdir/lists/particle/Gp_part_5m.txt
 
 #echo '<br> The P2 and P5 channels can be approximately scaled to the EPHIN P4GM and P41GM rates. <br>We plot the scaled RADMON limits for P4GM and P41GM on the plot.' >> $SPACE_Wdir/G13image2
 
-#echo '<CENTER><IMG SRC="./RADIATION/pgplot.gif"></CENTER>' >> $SPACE_Wdir/G13image2
+#echo '<CENTER><IMG SRC="./RADIATION/pgplotI4.gif"></CENTER>' >> $SPACE_Wdir/G13Eimage2
 
 #sec #echo '<ul><li> <a href="ftp://ftp.sec.noaa.gov/pub/lists/pchan/G12pchan_5m.txt">GOES-13 five minute average data.</a><li> <a href="ftp://ftp.sec.noaa.gov/pub/lists/pchan/G12pchan_5m.txt">GOES-10 five minute average data.</a>' >> $SPACE_Wdir/G12image2
 #echo '<ul><li> <a href="ftp://www.sec.noaa.gov/pub/lists/pchan/G8pchan_5m.txt">GOES-8 five minute average data.</a><li> <a href="ftp://www.sec.noaa.gov/pub/lists/pchan/G10pchan_5m.txt">GOES-10 five minute average data.</a><li> <a href="ftp://www.sec.noaa.gov/pub/lists/pchan/G11pchan_5m.txt">GOES-11 five minute average data.</a><li> <a href="ftp://www.sec.noaa.gov/pub/lists/pchan/G12pchan_5m.txt">GOES-12 five minute average data.</a>' >> $SPACE_Wdir/G12image2
