@@ -6,20 +6,22 @@ BEGIN{
 	P8m=10000000.
 	P10m=10000000.
 	P11m=10000000.
+	H1m=10000000.
+	H2m=10000000.
 	i=0.0
 	ie=0.0
 
-fmt1="%4d %2d %2d %4d %12.2f %12.5f %12.5f %12.5f %12.5f %12.5f\n"
+fmt1="%4d %2d %2d %4d %12.2f %12.5f %12.5f %12.5f %12.5f %12.5f %12.5f %12.5f\n"
 
-fmt2="%7s %14.3f %14.6f %14.6f %14.6f %14.6f %14.6f \n"
-fmt3="%7s %14.4e %14.4e %14.4e %14.4e %14.4e %14.4e \n"
+fmt2="%7s %14.3f %14.6f %14.6f %14.6f %14.6f %14.6f %14.6f %14.6f\n"
+fmt3="%7s %14.4e %14.4e %14.4e %14.4e %14.4e %14.4e %14.4e %14.4e\n"
 
 print "                                      Most recent GOES 13 observations"
 print "                                    Proton Flux particles/cm2-s-ster-MeV"
 print " "
-print " UT Date   Time     ----------------------------- Protons MeV -------------------------------"
-print "  YR MO DA HHMM      0.8-4.0      4.0-9.0       40-80       350-420      500-700       >700"
-print "                        P1          P2           P5           P8           P10          P11"
+print " UT Date   Time     ----------------------------- Protons MeV -------------------------------  --- HRC proxies ---"
+print "  YR MO DA HHMM      0.8-4.0      4.0-9.0       40-80       350-420      500-700       >700  "
+print "                        P1          P2           P5           P8           P10          P11       H1          H2"
 	   }
 
 {

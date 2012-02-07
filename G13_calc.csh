@@ -31,6 +31,9 @@ set file = http://www.swpc.noaa.gov/ftpdir/lists/pchan/Gp_pchan_5m.txt
     #run nawkscript to calculate averages and mins
     nawk -F" " -f $SPACE_Wdir/G13_process.nawk $SPACE_Wdir/G13returned >! $SPACE_Wdir/G13data
 
+/data/mta4/space_weather/G13_yellow_viol.pl # check for violations
+/data/mta4/space_weather/G13_red_viol.pl # check for violations
+
 #go collect the image 
 #sec #/opt/local/bin/lynx -source http://solar.sec.noaa.gov/rt_plots/satenvBL.html | tail -10 | head -1 >! $SPACE_Wdir/G12tmp
 /opt/local/bin/lynx -source http://www.sec.noaa.gov/rt_plots/satenvBL.html | tail -14 | head -1 >! $SPACE_Wdir/G13tmp
