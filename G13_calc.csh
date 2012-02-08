@@ -4,6 +4,8 @@
 set SPACE_Wdir=/data/mta4/space_weather
 set WEBdir=/data/mta4/www
 
+#set SPACE_Wdir=/data/mta4/CVS_test/space_weather
+#set WEBdir=/data/mta4/CVS_test/space_weather
 #set today=`date '+%y%m%d'`
 
 # 01/14/02 BDS -SEC data problems, changed to www.sec.noaa.gov
