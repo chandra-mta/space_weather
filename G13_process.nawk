@@ -21,7 +21,7 @@ print "                                    Proton Flux particles/cm2-s-ster-MeV"
 print " "
 print " UT Date   Time     ----------------------------- Protons MeV -------------------------------  --- HRC proxy ---"
 print "  YR MO DA HHMM      0.8-4.0      4.0-9.0       40-80       350-420      500-700       >700  "
-print "                        P1          P2           P5           P8           P10          P11           H1   "
+print "                        P1          P2           P5           P8           P10          P11          H2   "
 	   }
 
 {
@@ -97,7 +97,7 @@ print " "
 
 print "             ----------------------------------- Protons MeV -----------------------------------"
 print "              0.8-4.0        4.0-9.0         40-80          350-420       500-700         >700"
-print "                P1             P2             P5              P8            P10            P11             H1  "
+print "                P1             P2             P5              P8            P10            P11             H2  "
 
 printf(fmt2, "AVERAGE", P1a,P2a,P5a,P8a,P10a,P11a,HP1a)
 printf(fmt3, "FLUENCE", P1f,P2f,P5f,P8f,P10f,P11f,HP1f)
