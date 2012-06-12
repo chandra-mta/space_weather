@@ -4,6 +4,7 @@
 # 04 feb 2004 bds
 #  P2 and P3 added back in when ACE is fixed
 #   alert on P3 as before and keep P6 scaled alert for now
+# 07 Jun 2012 - add filter for "bogus" ACE data
 BEGIN{ 
   time2   = -1
   E38m  =10000000.
@@ -16,6 +17,11 @@ BEGIN{
   P5_P3m  =10000000.
   P6_P3m  =10000000.
   P7_P3m  =10000000.
+  p2_last  =1000000.
+  p3_last  =100000.
+  p5_last  =20000.
+  p6_last  =10000.
+  p7_la t  =10000.
   P56a  =0.
   P130a  =0.
   P337a   =0.
@@ -61,6 +67,56 @@ P6_P3_scaled=-100000.000
 P7_P3_scaled=-100000.000 
 
 if ($10 == 0){ 
+  #test for bogus data
+  plast=p3_last
+  p3_diff = $12 - p3_last
+  if (p3_diff > 100000) {
+      system("date >> /tmp/mta/p3_bad")
+      system("echo 'found bogus value P3 '" $12 ">> /tmp/mta/p3_bad")
+      $12 = -999
+      $10 = 1
+  }
+  if ($12 > 0)  p3_last = $12
+
+  p2_diff = $11 - p2_last
+  if (p2_diff > 1000000) {
+      system("date >> /tmp/mta/p2_bad")
+      system("echo 'found bogus value P2 '" $11 ">> /tmp/mta/p2_bad")
+      $11 = -999
+      $10 = 1
+  }
+  if ($11 > 0)  p2_last = $11
+
+  p5_diff = $13 - p5_last
+  if (p5_diff > 20000) {
+      system("date >> /tmp/mta/p5_bad")
+      system("echo 'found bogus value P5 '" $13 ">> /tmp/mta/p5_bad")
+      $13 = -999
+      $10 = 1
+      P5_P3_scaled=-999
+  }
+  if ($13 > 0)  p5_last = $13
+
+  p6_diff = $14 - p6_last
+  if (p6_diff > 10000) {
+      system("date >> /tmp/mta/p6_bad")
+      system("echo 'found bogus value P6 '" $14 ">> /tmp/mta/p6_bad")
+      $14 = -999
+      $10 = 1
+      P6_P3_scaled=-999
+  }
+  if ($14 > 0)  p6_last = $14
+
+  p7_diff = $15 - p7_last
+  if (p7_diff > 10000) {
+      system("date >> /tmp/mta/p7_bad")
+      system("echo 'found bogus value P7 '" $15 ">> /tmp/mta/p7_bad")
+      $15 = -999
+      $10 = 1
+      P7_P3_scaled=-999
+  }
+  if ($15 > 0)  p7_last = $15
+
   # check validity individually, too, some (P5) may be bad
   if ($13 > 0) {
     P5_P3_scaled=$13*P5_P3_scale  # scale P3 with P5
@@ -92,6 +148,8 @@ if ($10 == 0){
     P1073a  =P1073 / i7
     P7_P3a  =P7_P3 / i7
   }
+} #if ($10 == 0){ 
+if ($10 == 0){  # is data still valid?
   i += 1.
   year += $1
   month += $2
@@ -104,6 +162,7 @@ if ($10 == 0){
   if ($4 > time2)   time2 = $4
   if ($11 < P56m)  P56m = $11
   if ($12 < P130m)  P130m = $12
+
 } #if ($10 == 0){ 
 
 printf(fmt1, $1, $2, $3, $4, $8,$9,$11,$12,P5_P3_scaled,P6_P3_scaled,$13,$14,$15)
@@ -166,7 +225,8 @@ if (i > 0 && ie > 0){
 
 #CREATE ALERT MESSAGE CALL
   val = sprintf("%.4e", P130f)
-  command = "/data/mta4/space_weather/aceviolation_protons.csh " val
+  #test command = "/data/mta4/space_weather/aceviolation_protons.csh " val
+  command = "echo P3 viol " val
 
   #if (E175m  > 100.)  system ("/data/mta4/space_weather/aceviolation_electrons.csh")
 
@@ -179,13 +239,15 @@ if (i > 0 && ie > 0){
     #if (P130f  > 360000000.) {
     if (P5_P3f  > 120000000.) {
       val = sprintf("%.4e", P5_P3f)   #P5
-      command = "/data/mta4/space_weather/aceviolation_protonsP5.csh " val
+      #command = "/data/mta4/space_weather/aceviolation_protonsP5.csh " val
+      command = "echo P5 viol " val
       system (command)
     }  # if (P5_P3f  > 120000000.)  system (command)
   } else { # trust P6
     if (P6_P3f > 120000000.) {
       val = sprintf("%.4e", P6_P3f)   #P6
-      command = "/data/mta4/space_weather/aceviolation_protonsP6.csh " val
+      #command = "/data/mta4/space_weather/aceviolation_protonsP6.csh " val
+      command = "echo P6 viol " val
       system (command)
     }  # if (P6_P3f   > 120000000.)  system (command)
     # send a message that P5 is bad
@@ -225,7 +287,7 @@ if (i > 0 && ie > 0){
 }  # if (E175m != 10000000.){
 else {
   print " No Valid data for last 2 hours"
-  system("/data/mta4/space_weather/ace_invalid_data.csh")
+  #test system("/data/mta4/space_weather/ace_invalid_data.csh")
 } #else {
 } # END
 #

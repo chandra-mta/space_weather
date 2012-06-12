@@ -24,27 +24,29 @@ print "  YR MO DA HHMM      0.8-4.0      4.0-9.0       40-80       350-420      
 print "                        P1          P2           P5           P8           P10          P11          H2   "
 	   }
 
+ln=0
 {
 
+ln +=1.
 #H1=$11*320000
 H1=$10*6000+$11*270000+$12*100000
 if ($11 < 0) H1=-100000
 if ($11 < 0) H2=-100000
 printf(fmt1, $1, $2, $3, $4, $7,$8,$11, $14,$16,$17,H1)
 	if ($7 != -1.00e+05){ 
-		i += 1.
-		year += $1
-		month += $2
-		day += $3
-		time += $4
-		P1	+=$7
-		P2	+=$8
-		P5	+=$11
-		P8	+=$14
-		P10    +=$16
-		P11	+=$17
-		HP1	+=H1
-		#HP2	+=H2
+		i_all += 1.
+		year_all += $1
+		month_all += $2
+		day_all += $3
+		time_all += $4
+		P1_all	+=$7
+		P2_all	+=$8
+		P5_all	+=$11
+		P8_all	+=$14
+		P10_all  +=$16
+		P11_all	+=$17
+		HP1_all	+=H1
+		#HP2_all	+=H2
 
 #find minima (maxima for time)
 		if ($4 > time2)   time2 = $4
@@ -56,6 +58,22 @@ printf(fmt1, $1, $2, $3, $4, $7,$8,$11, $14,$16,$17,H1)
 		if ($17 < P11m)  P11m = $17
 		if (H1 < H1m)  H1m = H1
 		#if (H2 < H2m)  H2m = H2
+
+	        if (ln >= 22){ 
+	        	i += 1.
+		        year += $1
+		        month += $2
+		        day += $3
+		        time += $4
+		        P1_all	+=$7
+		        P2_all	+=$8
+		        P5_all	+=$11
+		        P8_all	+=$14
+		        P10_all  +=$16
+		        P11_all	+=$17
+		        HP1_all	+=H1
+		        #HP2_all	+=H2
+                }
 		}
 
 }		
@@ -77,14 +95,14 @@ END	{
 		HP1a    =HP1 / i 
 		#HP2a    =HP2 / i 
 
-		P1f  	=P1 *  7200.
-		P2f 	=P2 * 7200. 
-		P5f 	=P5 * 7200. 
-		P8f 	=P8 * 7200. 
-		P10f    =P10 * 7200. 
-		P11f    =P11 * 7200. 
-		HP1f    =HP1 * 7200. 
-		#HP2f    =HP2 * 7200. 
+		P1f  	=P1_all *  7200.
+		P2f 	=P2_all * 7200. 
+		P5f 	=P5_all * 7200. 
+		P8f 	=P8_all * 7200. 
+		P10f    =P10_all * 7200. 
+		P11f    =P11_all * 7200. 
+		HP1f    =HP1_all * 7200. 
+		#HP2f    =HP2_all * 7200. 
 
 #goes 10        if (P2  > 50.)  system ("/data/mta4/space_weather/goes_violation.csh" ) 
 
