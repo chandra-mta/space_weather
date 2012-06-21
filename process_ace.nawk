@@ -19,9 +19,9 @@ BEGIN{
   P7_P3m  =10000000.
   p2_last  =1000000.
   p3_last  =100000.
-  p5_last  =20000.
-  p6_last  =10000.
-  p7_la t  =10000.
+  p5_last  =40000.
+  p6_last  =20000.
+  p7_last  =10000.
   P56a  =0.
   P130a  =0.
   P337a   =0.
@@ -71,8 +71,8 @@ if ($10 == 0){
   plast=p3_last
   p3_diff = $12 - p3_last
   if (p3_diff > 100000) {
-      system("date >> /tmp/mta/p3_bad")
-      system("echo 'found bogus value P3 '" $12 ">> /tmp/mta/p3_bad")
+      system("date >> p3_bad")
+      system("echo 'found bogus value P3 '" $12" "$1" "$2" "$3" "$4 ">> p3_bad")
       $12 = -999
       $10 = 1
   }
@@ -80,17 +80,17 @@ if ($10 == 0){
 
   p2_diff = $11 - p2_last
   if (p2_diff > 1000000) {
-      system("date >> /tmp/mta/p2_bad")
-      system("echo 'found bogus value P2 '" $11 ">> /tmp/mta/p2_bad")
+      system("date >> p2_bad")
+      system("echo 'found bogus value P2 '" $11" "$1" "$2" "$3" "$4 ">> p2_bad")
       $11 = -999
       $10 = 1
   }
   if ($11 > 0)  p2_last = $11
 
   p5_diff = $13 - p5_last
-  if (p5_diff > 20000) {
-      system("date >> /tmp/mta/p5_bad")
-      system("echo 'found bogus value P5 '" $13 ">> /tmp/mta/p5_bad")
+  if (p5_diff > 40000) {
+      system("date >> p5_bad")
+      system("echo 'found bogus value P5 '" $13" "$1" "$2" "$3" "$4 ">> p5_bad")
       $13 = -999
       $10 = 1
       P5_P3_scaled=-999
@@ -98,9 +98,9 @@ if ($10 == 0){
   if ($13 > 0)  p5_last = $13
 
   p6_diff = $14 - p6_last
-  if (p6_diff > 10000) {
-      system("date >> /tmp/mta/p6_bad")
-      system("echo 'found bogus value P6 '" $14 ">> /tmp/mta/p6_bad")
+  if (p6_diff > 20000) {
+      system("date >> p6_bad")
+      system("echo 'found bogus value P6 '" $14" "$1" "$2" "$3" "$4 ">> p6_bad")
       $14 = -999
       $10 = 1
       P6_P3_scaled=-999
@@ -109,8 +109,8 @@ if ($10 == 0){
 
   p7_diff = $15 - p7_last
   if (p7_diff > 10000) {
-      system("date >> /tmp/mta/p7_bad")
-      system("echo 'found bogus value P7 '" $15 ">> /tmp/mta/p7_bad")
+      system("date >> p7_bad")
+      system("echo 'found bogus value P7 '" $15" "$1" "$2" "$3" "$4 ">> p7_bad")
       $15 = -999
       $10 = 1
       P7_P3_scaled=-999
