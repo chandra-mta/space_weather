@@ -17,11 +17,13 @@ BEGIN{
   P5_P3m  =10000000.
   P6_P3m  =10000000.
   P7_P3m  =10000000.
-  p2_last  =1000000.
-  p3_last  =100000.
-  p5_last  =40000.
-  p6_last  =20000.
-  p7_last  =10000.
+  getline < "last_ace"
+  split($0, last_vals)
+  p2_last  =last_vals[1]
+  p3_last  =last_vals[2]
+  p5_last  =last_vals[3]
+  p6_last  =last_vals[4]
+  p7_last  =last_vals[5]
   P56a  =0.
   P130a  =0.
   P337a   =0.
@@ -51,6 +53,7 @@ BEGIN{
   print "                     DE1          DE4         P2          P3       P3ScaledP5  P3scaledP6      P5          FP6p         P7"
   #print "  YR MO DA HHMM     38-53      175-315    65-112     112-187     112-187*    112-187**    310-580    761-1220   1060-1910"
   print "  YR MO DA HHMM     38-53       175-315     47-68       115-195     112-187*    112-187**    310-580     761-1220  1060-1910"
+
 }  #BEGIN , only do once
 
 {  # start loop, do for each record
@@ -180,6 +183,8 @@ if ($7 == 0){
 } # end loop, do for each record
 
 END { # do once, at the end
+# save last values
+system("echo " p2_last" "p3_last" "p5_last" "p6_last" "p7_last "> last_ace")
 
 #Calculate averages
 # old way if (E175m != 10000000.){
