@@ -254,8 +254,8 @@ if (i > 0 && ie > 0){
 
 #CREATE ALERT MESSAGE CALL
   val = sprintf("%.4e", P130f)
-  #test command = "/data/mta4/space_weather/aceviolation_protons.csh " val
-  command = "echo P3 viol " val
+  command = "/data/mta4/space_weather/aceviolation_protons.csh " val
+  #test command = "echo P3 viol " val
 
   #if (E175m  > 100.)  system ("/data/mta4/space_weather/aceviolation_electrons.csh")
 
@@ -268,15 +268,15 @@ if (i > 0 && ie > 0){
     #if (P130f  > 360000000.) {
     if (P5_P3f  > 120000000.) {
       val = sprintf("%.4e", P5_P3f)   #P5
-      #command = "/data/mta4/space_weather/aceviolation_protonsP5.csh " val
-      command = "echo P5 viol " val
+      command = "/data/mta4/space_weather/aceviolation_protonsP5.csh " val
+      #test command = "echo P5 viol " val
       system (command)
     }  # if (P5_P3f  > 120000000.)  system (command)
   } else { # trust P6
     if (P6_P3f > 120000000.) {
       val = sprintf("%.4e", P6_P3f)   #P6
-      #command = "/data/mta4/space_weather/aceviolation_protonsP6.csh " val
-      command = "echo P6 viol " val
+      command = "/data/mta4/space_weather/aceviolation_protonsP6.csh " val
+      #test command = "echo P6 viol " val
       system (command)
     }  # if (P6_P3f   > 120000000.)  system (command)
     # send a message that P5 is bad
