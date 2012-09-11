@@ -17,8 +17,13 @@ BEGIN{
   P5_P3m  =10000000.
   P6_P3m  =10000000.
   P7_P3m  =10000000.
-  getline < "last_ace"
+  getline < "start_ace"
   split($0, last_vals)
+  p2_start  =last_vals[1]
+  p3_start  =last_vals[2]
+  p5_start  =last_vals[3]
+  p6_start  =last_vals[4]
+  p7_start  =last_vals[5]
   p2_last  =last_vals[1]
   p3_last  =last_vals[2]
   p5_last  =last_vals[3]
@@ -54,6 +59,8 @@ BEGIN{
   #print "  YR MO DA HHMM     38-53      175-315    65-112     112-187     112-187*    112-187**    310-580    761-1220   1060-1910"
   print "  YR MO DA HHMM     38-53       175-315     47-68       115-195     112-187*    112-187**    310-580     761-1220  1060-1910"
 
+n=1
+
 }  #BEGIN , only do once
 
 {  # start loop, do for each record
@@ -79,7 +86,10 @@ if ($10 == 0){
       $12 = -999
       $10 = 1
   }
-  if ($12 > 0)  p3_last = $12
+  if ($12 > 0)  {
+      p3_last = $12
+      if (n == 1) p3_start=$12
+  }
 
   p2_diff = $11 - p2_last
   if (p2_diff > 1000000) {
@@ -88,7 +98,10 @@ if ($10 == 0){
       $11 = -999
       $10 = 1
   }
-  if ($11 > 0)  p2_last = $11
+  if ($11 > 0)  {
+      p2_last = $11
+      if (n == 1) p2_start=$11
+  }
 
   p5_diff = $13 - p5_last
   if (p5_diff > 40000) {
@@ -98,7 +111,10 @@ if ($10 == 0){
       $10 = 1
       P5_P3_scaled=-999
   }
-  if ($13 > 0)  p5_last = $13
+  if ($13 > 0)  {
+      p5_last = $13
+      if (n == 1) p5_start=$13
+  }
 
   p6_diff = $14 - p6_last
   if (p6_diff > 20000) {
@@ -109,6 +125,10 @@ if ($10 == 0){
       P6_P3_scaled=-999
   }
   if ($14 > 0)  p6_last = $14
+  if ($14 > 0)  {
+      p6_last = $14
+      if (n == 1) p6_start=$14
+  }
 
   p7_diff = $15 - p7_last
   if (p7_diff > 10000) {
@@ -118,7 +138,10 @@ if ($10 == 0){
       $10 = 1
       P7_P3_scaled=-999
   }
-  if ($15 > 0)  p7_last = $15
+  if ($15 > 0)  {
+      p7_last = $15
+      if (n == 1) p7_start=$15
+  }
 
   # check validity individually, too, some (P5) may be bad
   if ($13 > 0) {
@@ -151,6 +174,7 @@ if ($10 == 0){
     P1073a  =P1073 / i7
     P7_P3a  =P7_P3 / i7
   }
+n=n+1 # increment line counter
 } #if ($10 == 0){ 
 if ($10 == 0){  # is data still valid?
   i += 1.
@@ -184,7 +208,7 @@ if ($7 == 0){
 
 END { # do once, at the end
 # save last values
-system("echo " p2_last" "p3_last" "p5_last" "p6_last" "p7_last "> last_ace")
+system("echo " p2_start" "p3_start" "p5_start" "p6_start" "p7_start "> start_ace")
 
 #Calculate averages
 # old way if (E175m != 10000000.){
@@ -230,8 +254,8 @@ if (i > 0 && ie > 0){
 
 #CREATE ALERT MESSAGE CALL
   val = sprintf("%.4e", P130f)
-  #test command = "/data/mta4/space_weather/aceviolation_protons.csh " val
-  command = "echo P3 viol " val
+  command = "/data/mta4/space_weather/aceviolation_protons.csh " val
+  #test command = "echo P3 viol " val
 
   #if (E175m  > 100.)  system ("/data/mta4/space_weather/aceviolation_electrons.csh")
 
@@ -244,15 +268,15 @@ if (i > 0 && ie > 0){
     #if (P130f  > 360000000.) {
     if (P5_P3f  > 120000000.) {
       val = sprintf("%.4e", P5_P3f)   #P5
-      #command = "/data/mta4/space_weather/aceviolation_protonsP5.csh " val
-      command = "echo P5 viol " val
+      command = "/data/mta4/space_weather/aceviolation_protonsP5.csh " val
+      #test command = "echo P5 viol " val
       system (command)
     }  # if (P5_P3f  > 120000000.)  system (command)
   } else { # trust P6
     if (P6_P3f > 120000000.) {
       val = sprintf("%.4e", P6_P3f)   #P6
-      #command = "/data/mta4/space_weather/aceviolation_protonsP6.csh " val
-      command = "echo P6 viol " val
+      command = "/data/mta4/space_weather/aceviolation_protonsP6.csh " val
+      #test command = "echo P6 viol " val
       system (command)
     }  # if (P6_P3f   > 120000000.)  system (command)
     # send a message that P5 is bad
