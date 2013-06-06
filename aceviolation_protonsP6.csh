@@ -33,13 +33,16 @@ set block = "/home/mta/Snap/.scs107alert"
       endif
 
       if (! -s $block) then
-        echo "This message sent to sot_red_alert" >> $lock
-        cat $lock | mailx -s ACE_p3_scaled sot_red_alert
+        #echo "This message sent to sot_yellow_alert" >> $lock
+        #cat $lock | mailx -s ACE_p3_scaled sot_yellow_alert
+        cat $lock | mailx -s ACE_p3_scaled brad
       endif
       if ( -s $block) then
-        echo "This message sent to sot_yellow_alert" >> $lock
-        cat $lock | mailx -s ACE_p3_scaled sot_yellow_alert
+        #echo "This message sent to sot_yellow_alert" >> $lock
+        #cat $lock | mailx -s ACE_p3_scaled sot_yellow_alert
+        cat $lock | mailx -s ACE_p3_scaled brad
       endif
+      #cat $lock | mailx -s ACE_p3_scaled brad
 
     endif
 
