@@ -3,6 +3,7 @@
 use lib '/home/mta/PERL';
 
 #$infile="/data/mta4/space_weather/G11pchan";
+$block="/data/mta4/www/Snapshot/.scs107alert";
 $infile="/data/mta4/space_weather/G13returned";
 $P2_lim=90.9;  # 300/3.3 (P4GM)
 $P5_lim=0.70;  # 8.47/12 (P41GM)
@@ -47,12 +48,20 @@ while (<IN>) {
     if (!-s $p2r_lockfile) { # if an alert hasn't been sent, send one
       if ($p2_wait == 5) {
         open (OUT,">$p2r_lockfile") || print "Cannot open $p2r_lockfile\n";
-        print OUT "A Radiation violation of GOES 13 P2 (4-9 MeV) has occurred indicating a probable EPHIN P4GM trip.\n";
-        print OUT "Telecon now on 1-877-521-0441 111165#\n";
-        printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p2;
-        printf OUT " Limit: %6.2f \n", $P2_lim;
-        close OUT;
-        `cat $p2r_lockfile | mailx -s "GOES Alert Telecon now" sot_red_alert`;
+        if (-s $block) {
+          print OUT "A Radiation violation of GOES 13 P2 (4-9 MeV) has occurred.\n";
+          printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p2;
+          printf OUT " Limit: %6.2f \n", $P2_lim;
+          close OUT;
+          `cat $p2r_lockfile | mailx -s "GOES Alert" sot_yellow_alert`;
+        } else {
+          print OUT "A Radiation violation of GOES 13 P2 (4-9 MeV) has occurred indicating a probable EPHIN P4GM trip.\n";
+          print OUT "Telecon now on 1-877-521-0441 111165#\n";
+          printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p2;
+          printf OUT " Limit: %6.2f \n", $P2_lim;
+          close OUT;
+          `cat $p2r_lockfile | mailx -s "GOES Alert Telecon now" sot_red_alert`;
+        }
         #`cat $p2r_lockfile | mailx -s "GOES Alert" sot_red_alert`;
         #`cat $p2r_lockfile | mailx -s "GOES Alert TEST" brad`;
       } # if ($p2_wait == 5) {
@@ -68,12 +77,20 @@ while (<IN>) {
     if (!-s $p5r_lockfile) { # if an alert hasn't been sent, send one
       if ($p5_wait == 5) {
         open (OUT,">$p5r_lockfile");
-        print OUT "A Radiation violation of GOES 13 P5 (40-80 MeV) has occurred indicating a probable EPHIN P41GM trip.\n";
-        print OUT "Telecon now on 1-877-521-0441 111165#\n";
-        printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p5;
-        printf OUT " Limit: %6.2f \n", $P5_lim;
-        close OUT;
-        `cat $p5r_lockfile | mailx -s "GOES Alert Telecon now" sot_red_alert`;
+        if (-s $block) {
+          print OUT "A Radiation violation of GOES 13 P5 (40-80 MeV) has occurred.\n";
+          printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p5;
+          printf OUT " Limit: %6.2f \n", $P5_lim;
+          close OUT;
+          `cat $p5r_lockfile | mailx -s "GOES Alert" sot_yellow_alert`;
+        } else {
+          print OUT "A Radiation violation of GOES 13 P5 (40-80 MeV) has occurred indicating a probable EPHIN P41GM trip.\n";
+          print OUT "Telecon now on 1-877-521-0441 111165#\n";
+          printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p5;
+          printf OUT " Limit: %6.2f \n", $P5_lim;
+          close OUT;
+          `cat $p5r_lockfile | mailx -s "GOES Alert Telecon now" sot_red_alert`;
+        }
         #`cat $p5r_lockfile | mailx -s "GOES Alert TEST" brad`;
       } # if ($p5_wait == 5) {
     } else { # if (!-s $lockfile) { # if an alert hasn't been sent, send one
