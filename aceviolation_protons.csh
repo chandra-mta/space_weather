@@ -13,7 +13,8 @@ endif
 
 #set lock = "/pool1/mta/prot_violate"
 set lock = "/tmp/mta/prot_violate"
-set block = "/home/mta/Snap/.scs107alert"
+#set block = "/home/mta/Snap/.scs107alert"
+set block = "/data/mta4/www/Snapshot/.scs107alert"
 #set lock = "./prot_violate"
 
     if ( -f $lock) then
@@ -37,12 +38,12 @@ set block = "/home/mta/Snap/.scs107alert"
         echo "This message sent to sot_ace_alert" >> $lock
         #cat $lock | mailx -s "ACE_p3 telecon now" sot_red_alert
         #cat $lock | mailx -s "ACE_p3 " sot_red_alert
-        cat $lock | mailx -s "ACE_p3 " sot_ace_alert
+        cat $lock | mailx -s "ACE_p3 " sot_ace_alert\@cfa.harvard.edu
         #cat $lock | mailx -s "ACE_p3 telecon now" 6172573986@mobile.mycingular.com
       endif
       if ( -s $block) then
         echo "This message sent to sot_yellow_alert" >> $lock
-        cat $lock | mailx -s ACE_p3 sot_yellow_alert
+        cat $lock | mailx -s ACE_p3 sot_yellow_alert\@cfa.harvard.edu
       endif
       #cat $lock | mailx -s ACE_p3_test brad 
     endif
