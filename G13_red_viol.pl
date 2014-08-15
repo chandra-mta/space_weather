@@ -82,14 +82,14 @@ while (<IN>) {
           printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p5;
           printf OUT " Limit: %6.2f \n", $P5_lim;
           close OUT;
-          `cat $p5r_lockfile | mailx -s "GOES Alert" sot_yellow_alert`;
+          `cat $p5r_lockfile | mailx -s "GOES Alert" sot_yellow_alert\@ipa.harvard.edu`;
         } else {
           print OUT "A Radiation violation of GOES 13 P5 (40-80 MeV) has occurred indicating a probable EPHIN P41GM trip.\n";
-          print OUT "Telecon now on 1-877-521-0441 111165#\n";
+          print OUT "Telecon now on 1-844-467-6272 111165#\n";
           printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p5;
           printf OUT " Limit: %6.2f \n", $P5_lim;
           close OUT;
-          `cat $p5r_lockfile | mailx -s "GOES Alert Telecon now" sot_red_alert`;
+          `cat $p5r_lockfile | mailx -s "GOES Alert Telecon now" sot_red_alert\@ipa.harvard.edu`;
         }
         #`cat $p5r_lockfile | mailx -s "GOES Alert TEST" brad`;
       } # if ($p5_wait == 5) {

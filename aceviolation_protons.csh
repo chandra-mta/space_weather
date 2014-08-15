@@ -43,7 +43,7 @@ set block = "/data/mta4/www/Snapshot/.scs107alert"
       endif
       if ( -s $block) then
         echo "This message sent to sot_yellow_alert" >> $lock
-        cat $lock | mailx -s ACE_p3 sot_yellow_alert\@cfa.harvard.edu
+        cat $lock | mailx -s ACE_p3 sot_yellow_alert\@ipa.harvard.edu
       endif
       #cat $lock | mailx -s ACE_p3_test brad 
     endif
