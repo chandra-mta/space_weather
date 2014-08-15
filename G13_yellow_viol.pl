@@ -51,7 +51,7 @@ while (<IN>) {
         printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p2;
         printf OUT " Limit: %6.2f\n", $P2_lim;
         close OUT;
-        `cat $p2y_lockfile | mailx -s "GOES Alert" sot_yellow_alert 6172573986\@mobile.mycingular.com`;
+        `cat $p2y_lockfile | mailx -s "GOES Alert" sot_yellow_alert\@ipa.harvard.edu 6172573986\@txt.att.net`;
         #`cat $p2y_lockfile | mailx -s "GOES Alert TEST" brad`;
       } # if ($p2_wait == 5) {
     } else { # if (!-s $lockfile) { # if an alert hasn't been sent, send one
@@ -70,7 +70,7 @@ while (<IN>) {
         printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p5;
         printf OUT " Limit: %6.2f\n", $P5_lim;
         close OUT;
-        `cat $p5y_lockfile | mailx -s "GOES Alert" sot_yellow_alert 6172573986\@mobile.mycingular.com`;
+        `cat $p5y_lockfile | mailx -s "GOES Alert" sot_yellow_alert\@ipa.harvard.edu 6172573986\@txt.att.net`;
         #`cat $p5y_lockfile | mailx -s "GOES Alert TEST" brad`;
       } # if ($p5_wait == 5) {
     } else { # if (!-s $lockfile) { # if an alert hasn't been sent, send one
