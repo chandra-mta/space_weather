@@ -48,7 +48,7 @@ while (<IN>) {
       if ($p2_wait == 5) {
         open (OUT,">$p2r_lockfile") || print "Cannot open $p2r_lockfile\n";
         print OUT "A Radiation violation of GOES 13 P2 (4-9 MeV) has occurred indicating a probable EPHIN P4GM trip.\n";
-        print OUT "Telecon now on 1-877-521-0441 111165#\n";
+        print OUT "Telecon now on 1-844-467-6272 111165#\n";
         printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p2;
         printf OUT " Limit: %6.2f \n", $P2_lim;
         close OUT;
@@ -69,7 +69,7 @@ while (<IN>) {
       if ($p5_wait == 5) {
         open (OUT,">$p5r_lockfile");
         print OUT "A Radiation violation of GOES 13 P5 (40-80 MeV) has occurred indicating a probable EPHIN P41GM trip.\n";
-        print OUT "Telecon now on 1-877-521-0441 111165#\n";
+        print OUT "Telecon now on 1-844-467-6272 111165#\n";
         printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p5;
         printf OUT " Limit: %6.2f \n", $P5_lim;
         close OUT;

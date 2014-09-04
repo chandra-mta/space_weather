@@ -13,7 +13,8 @@ endif
 
 #set lock = "/pool1/mta/prot_violate"
 set lock = "/tmp/mta/prot_violate"
-set block = "/home/mta/Snap/.scs107alert"
+#set block = "/home/mta/Snap/.scs107alert"
+set block = "/data/mta4/www/Snapshot/.scs107alert"
 #set lock = "./prot_violate"
 
     if ( -f $lock) then
@@ -31,12 +32,13 @@ set block = "/home/mta/Snap/.scs107alert"
       endif
 
       if (! -s $block) then
-        echo "Telecon now on 1-877-521-0441 111165#" >> $lock
-        echo "This message sent to sot_red_alert" >> $lock
-        #tmp echo "This message sent to sot_ace_alert" >> $lock
-        cat $lock | mailx -s "ACE_p3 telecon now" sot_red_alert
+        #echo "Telecon now on 1-877-521-0441 111165#" >> $lock
+        #echo "This message sent to sot_red_alert" >> $lock
+        echo "The ACIS on-call person should review the data and call a telecon if necessary. " >> $lock
+        echo "This message sent to sot_ace_alert" >> $lock
+        #cat $lock | mailx -s "ACE_p3 telecon now" sot_red_alert
         #cat $lock | mailx -s "ACE_p3 " sot_red_alert
-        #tmp cat $lock | mailx -s "ACE_p3 " sot_ace_alert
+        cat $lock | mailx -s "ACE_p3 " sot_ace_alert
         #cat $lock | mailx -s "ACE_p3 telecon now" 6172573986@mobile.mycingular.com
       endif
       if ( -s $block) then
