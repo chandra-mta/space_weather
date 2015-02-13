@@ -58,7 +58,7 @@ if ($count > 28) then
     
 
     #run nawkscript to calculate averages and mins
-    gawk -F" " -f $SPACE_Wdir/process_ace.gawk $SPACE_Wdir/last45 > $SPACE_Wdir/acedata
+    gawk -F" " -f $SPACE_Wdir/process_ace.nawk $SPACE_Wdir/last45 > $SPACE_Wdir/acedata
     #smart_proc#
     # if P3 might be good turn on "smarter" processing, 
     #  -comment out 1 line above ( nawf -F ...)
