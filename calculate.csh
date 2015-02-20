@@ -77,8 +77,8 @@ lynx -source http://services.swpc.noaa.gov/images/ace-mag-swepam-7-day.gif >! $W
 #sed s/'<CENTER><IMG SRC="'/''/1 $SPACE_Wdir/tmpkp | sed s/'"><'/' '/1 | sed s/'\/CENTER>'/''/1 >! $SPACE_Wdir/kpimagename
 #set image_varkp=`cat $SPACE_Wdir/kpimagename`
 
-##lynx -source http://www.swpc.noaa.gov/wingkp/wingkp_15m_24h.gif >!  $WEBdir/wingkp.gif
-##usr/bin/convert -negate  $WEBdir/wingkp.gif - >! $WEBdir/wingkp_i.gif
+lynx -source http://services.swpc.noaa.gov/images/wing-kp-24-hour.gif >!  $WEBdir/wingkp.gif
+/usr/bin/convert -negate  $WEBdir/wingkp.gif - >! $WEBdir/wingkp_i.gif
 
 cat $SPACE_Wdir/header $SPACE_Wdir/acedata  $SPACE_Wdir/image2 $SPACE_Wdir/rob1 $SPACE_Wdir/footer >! $WEBdir/ace.html
 
