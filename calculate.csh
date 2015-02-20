@@ -65,7 +65,6 @@ if ($count > 28) then
 lynx -source http://services.swpc.noaa.gov/images/ace-epam-7-day.gif | /usr/bin/convert -negate - - >! $WEBdir/Epam_7di.gif
 lynx -source http://services.swpc.noaa.gov/images/ace-epam-7-day.gif >! $WEBdir/Epam_7d.gif
 lynx -source http://services.swpc.noaa.gov/images/ace-epam-7-day.gif >! $WEBdir/mta_ace_plot.gif
-/usr/bin/convert -negate $WEBdir/mta_ace_plot.gif $WEBdir/Epam_7di.gif
 /usr/bin/convert -negate $WEBdir/mta_ace_plot_P3.gif $WEBdir/Epam_7di_P3.gif
 
 # get wind speed etc. plot
