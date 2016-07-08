@@ -24,7 +24,7 @@ set WEBdir=/data/mta4/www
 #set file = ftp://ftp.sec.noaa.gov/pub/lists/pchan/G10pchan_5m.txt
 #set file = http://www.sec.noaa.gov/ftpdir/lists/pchan/G14pchan_5m.txt
 #set file = http://www.sec.noaa.gov/ftpdir/lists/xray/Gp_xr_5m.txt
-set file = http://www.swpc.noaa.gov/ftpdir/lists/xray/Gp_xr_5m.txt
+set file = ftp://ftp.sec.noaa.gov/pub/lists/xray/Gp_xr_5m.txt
 
 #/opt/local/bin/lynx -source $file
 /opt/local/bin/lynx -source $file >! $SPACE_Wdir/G14returned1
