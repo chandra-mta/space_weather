@@ -50,7 +50,7 @@ BEGIN{
   fmt3="%7s %11.4e %11.4e %11.4e %11.4e %11.4e %11.4e %11.4e %11.4e %11.4e\n"
   fmt4="%7s %11s %11.3f %11s %11.3f %11s %11.3f %11s %11.3f \n"
 
-  print "                                        Most recent ACE observations"
+  print "                                        Quicklook ACE observations"
   print "                                 Differential Flux particles/cm2-s-ster-MeV"
   print " "
   print " UT Date   Time    --- Electron keV ---     ---------------------------------- Protons keV -------------------------------"
@@ -72,11 +72,15 @@ P7_P3_scale=110. # scale P7 to P3 values, while P3 is broke
 #P3#printf(fmt1, $1, $2, $3, $4, $8,$9,$11,$12,$13,$14,$15)
 
 # initialize calculated values (in case $10 !=0, missing data)
+P5_P3_scale=7. # scale P5 to P3 values, while P3 is broke
+P6_P3_scale=36. # scale P6 to P3 values, while P3 is broke
+P7_P3_scale=110. # scale P7 to P3 values, while P3 is broke
+
 P5_P3_scaled=-100000.000 
 P6_P3_scaled=-100000.000 
 P7_P3_scaled=-100000.000 
 
-if ($10 == 0){  # is data still valid?
+if ($10 > 0){  # is data still valid?
   i += 1.
   year += $1
   #month += $2
@@ -85,6 +89,9 @@ if ($10 == 0){  # is data still valid?
   #time += print($4 $5)
   P56  +=$8
   P130  +=$9
+  P5_P3_scaled=$10*P5_P3_scale
+  P6_P3_scaled=$11*P6_P3_scale
+  P7_P3_scaled=$12*P7_P3_scale
 
 #find minima (maxima for time)
   if ($4 > time2)   time2 = $4    #  CHANGE TIME
@@ -180,7 +187,7 @@ if (i > 0 && ie > 0){
 
 }  # if (E175m != 10000000.){
 else {
-  print " No Valid data for last 2 hours"
+#  print " No Valid data for last 2 hours"
   #test system("/data/mta4/space_weather/ace_invalid_data.csh")
 } #else {
 } # END
