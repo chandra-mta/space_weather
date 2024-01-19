@@ -16,8 +16,8 @@ set lock = "/pool1/mta/prot_spec_violate"
       echo "see http://cxc.harvard.edu/mta/ace.html" >> $lock
 
       echo "This message sent to sot_yellow_alert" >> $lock
-      cat $lock | mailx -s ACE_p5/p6 sot_yellow_alert
-      #cat $lock | mailx -s ACE_p5/p6 brad swolk
+      cat $lock | mailx -s ACE_p5/p6 sot_yellow_alert@cfa.harvard.edu
+      #cat $lock | mailx -s ACE_p5/p6 swolk@cfa.harvard.edu
     endif
 
 #end

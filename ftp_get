@@ -1,0 +1,151 @@
+#! /bin/ksh
+
+function ftp_get
+{
+  # NAME
+  #    ftp_get
+  # PURPOSE
+  #    To retrieve one or more files from an anonymous ftp server
+  #    Without any optional arpguments, files will be placed in
+  #    DEFAULT_LOCAL_DIRECTORY and will be retrieved from DEFAULT_HOST
+  #    both of which are defined below.
+  # USAGE
+  #    ftp_get [-d local_directory] [-h hostname] FILE1 [..FILEN]
+  #
+  #    EXAMPLE 1: Copy the file /pub/SECNEWS.txt from ftp.sec.noaa.gov
+  #               and place it in local /tmp directory.
+  #       ftp_get /pub/SECNEWS.txt
+  #    
+  #    EXAMPLE 2: Copy the file /pub/latest/README and place it 
+  #               in local directory named /usr/local/sec
+  #       ftp_get -d /usr/local/sec ftp.sec.noaa.gov /pub/SECNEWS.txt  
+  #
+  #    EXAMPLE 3: Copy the file /pub/README from ftp.ncsa.uiuc.edu
+  #               and place it in local /tmp directory.       
+  #       ftp_get -h ftp.ncsa.uiuc.edu /pub/README
+  #
+  # AUTHOR
+  #    Vern Raben - Jan 1995 (mailto:vraben@sec.noaa.gov)
+  #
+
+  # Remove the "#" in front of the following line to echo what is executed
+  # set -xv
+
+  # Set DEFAULT_LOCAL_DIRECTORY to the name of a directory where you want
+  # the files transferred to normally be placed
+  DEFAULT_LOCAL_DIRECTORY=/tmp
+
+  # Set DEFAULT_HOSTNAME to the hostname of an anonymous ftp site that you
+  # connect to often
+  DEFAULT_HOSTNAME=ftp.sec.noaa.gov
+
+  # The following is the name of a temporary scratch file
+  TMP_FILE=/tmp/ftp_get.$$
+
+  # Get your  hostname
+  local_host=`hostname` 
+
+  # Also need to add domain part, try to get it from /etc/hosts file
+  if [ -f /etc/hosts ]; then
+    local_host2=`cat /etc/hosts | grep $local_host`
+
+    # Assume that your fully qualified hostname is the 2d entry on the line
+    local_hostname=`print $local_host2 | awk '{ print $2 }`
+  else 
+    # If you don't have an /etc/hosts file, set it explicitly for your site
+    local_hostname=your_hostname.your_domain.your_org
+  fi
+
+  # Create the password to send
+  password="${LOGNAME}@${local_hostname}"
+
+  # ------------- You shouldn't have to change anything below here ----------
+
+  # set usage prompt
+  USAGE="Usage: $0 [-h hostname] [-d directory] FILE1 [..FILEN]"
+
+  # Obtain command line options
+  while getopts :d:h: arguments; do
+    case $arguments in
+       d) local_directory_arg=$OPTARG;;
+       h) hostname_arg=$OPTARG;;
+      \?) print "Error:$OPTARG is not a valid option"
+          print "$USAGE"
+          exit 1;;
+    esac
+  done
+
+  # shift arguments to correct for any options 
+  (( num_options=OPTIND-1 ))
+  shift $num_options
+
+
+# Check that here is at least one argument
+  if [ $# -lt 1 ]; then
+    print $USAGE
+    exit 1
+  fi
+
+  # Set local directory to the default if there is no -d option
+  local_directory=${local_directory_arg:-$DEFAULT_LOCAL_DIRECTORY}
+
+  # set hostname to the default if there is no -h option
+  remote_hostname=${hostname_arg:-$DEFAULT_HOSTNAME}
+
+  # Open output to the temporary file
+  exec 8>$TMP_FILE
+
+  # build a temporary file of ftp commands
+  print -u8 "user ftp $password"
+  print -u8 "lcd $local_directory"
+
+  (( m=0 ))
+  prev_path=xxx
+  for arg; do
+    local_filename=${arg##*/}
+    file_list[$m]=$local_filename
+    local_path=${arg%$local_filename}
+    if [ ! $local_path = $prev_path ]; then
+      print -u8 "cd $local_path"
+    fi
+    print -u8 "get $local_filename $local_filename"
+    prev_path=$local_path
+    (( m=m+1 ))
+  done
+  print -u8 "bye"
+
+  # Close the temporary file
+  exec 8<&-
+
+  # Check that the remote_hostname can be "pinged"
+  /etc/ping $remote_hostname 64 1 > /dev/null
+  if [ $? -ne 0 ]; then
+    print -u2 "Error - cannot even ping $remote_hostname"
+    return 1
+  fi
+
+  # Now connect to the ftp site and retrieve file(s)
+  ftp -n $remote_hostname <$TMP_FILE
+
+  # Far as I know there is no way to check what ftp is doing
+  # other than verifying receipt of the files...
+  (( n=0 ))
+  (( ret_status=0 ))
+  for filename in $file_list; do
+    if [ ! -s ${local_directory}/${filename} ]; then
+      ((ret_status=ret_status+1))
+      print -u2 "Error: File $filename not received"
+    fi
+  done
+
+  if [ $ret_status -ne 0 ]; then
+     print "Here are the ftp commands sent:"
+     cat $TMP_FILE
+  fi
+
+  # Remove the temporary file and return
+  rm -f $TMP_FILE
+  return $ret_status
+}
+
+.

@@ -1,0 +1,42 @@
+PREDICT is Copyright 1991-2003 by John A. Magliacane, KD2BD.
+
+Algorithms used in PREDICT to calculate the positions of satellites
+in earth orbit as well as the position of the sun are based on Pascal
+routines written by Dr. TS Kelso and ported to 'C' by Neoklis Kyriazis,
+5B4AZ.  The algorithm used to calculate the position on the moon was
+obtained from the "Amateur Radio Software", by John Morris, GM4ANB,
+published by the Radio Society of Great Britian in 1985.
+
+Socket-based server code as well as the "map" client application
+was contributed by Ivan Galysh, KD4HBO.
+
+PIC/TRACK antenna rotator control code was contributed by Vittorio
+Benvenuti, I3VFJ.
+
+The "gsat" client was contributed by Xavier Crehueras, EB3CZS.
+
+The Perl client demonstration program was contributed by Rich
+Parry, W9IF.
+
+The WinPredictClient was contributed by Steve Fraser, VK5ASF.
+
+The concept of using "xearth" as a graphical display for PREDICT
+was originally conceived by Wade Hampton (which later developed
+into "earthtrack").
+
+Many have contributed smaller amounts of code to the project,
+including Bent Bagger OZ6BL, Tom Busch WB8WOR, Steve Fraser VK5ASF,
+Xavier Crehueras, EB3CZS, and others. 
+
+Calculations for squint angle were adopted from trk-0.4.1 by Lapo
+Pieri, IK5NAX.
+
+Special thanks go to Linus Torvalds and a world-wide cast of open source
+programmers who have contributed their time and talent in making the
+Linux operating system a truly outstanding product and the fastest
+growing operating system on the planet!
+
+--
+73, de John, KD2BD
+kd2bd@amsat.org
+March 2003

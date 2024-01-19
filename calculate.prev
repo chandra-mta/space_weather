@@ -1,0 +1,46 @@
+#! /bin/tcsh -f
+
+
+set SPACE_Wdir=/data/mta4/space_weather
+set WEBdir=/data/mta4/www
+
+#set today=`date '+%y%m%d'`
+
+
+set file = gopher://solar.sec.noaa.gov:70/00/lists/ace/ace_epam_5m
+
+rm $SPACE_Wdir/returned
+/opt/local/bin/lynx -source $file > $SPACE_Wdir/returned
+
+set count = `cat $SPACE_Wdir/returned | wc -l`
+#echo $count
+
+if ($count > 28) then 
+   rm $SPACE_Wdir/last45
+    tail -25 $SPACE_Wdir/returned > $SPACE_Wdir/lasthour
+    head -24 $SPACE_Wdir/lasthour > $SPACE_Wdir/last45
+    rm $SPACE_Wdir/lasthour
+
+    #run nawkscript to calculate averages and mins
+    nawk -F" " -f $SPACE_Wdir/process_ace.nawk $SPACE_Wdir/last45 > $SPACE_Wdir/acedata
+#    rm /data/mta4/www/ace.html
+#go collect the image 
+/opt/local/bin/lynx -source http://sec.noaa.gov/ace/EPAM_3d.html | tail -3 | head -1 >! $SPACE_Wdir/tmp
+#remove the junk
+sed s/'<IMG SRC="'/' '/1 $SPACE_Wdir/tmp | sed s/'">'/' '/1 >! $SPACE_Wdir/imagename
+
+#cat imagename | xargs -i set image3d = {}
+#create the line for the link
+set image_var=`cat $SPACE_Wdir/imagename`
+#echo '<HR> <a "./alerts/ace.archive"> 3-day archive </a>of the latest ACE data'
+#echo '<a "./alerts/fluance"> Fluance above 70kkm </a>
+
+echo '<HR><CENTER><IMG SRC="http://sec.noaa.gov/ace/'$image_var'"></CENTER>' >! $SPACE_Wdir/image
+cat $SPACE_Wdir/header $SPACE_Wdir/acedata  $SPACE_Wdir/image $SPACE_Wdir/footer >! $WEBdir/ace.html
+
+#   cat $SPACE_Wdir/header $SPACE_Wdir/acedata $SPACE_Wdir/footer > $WEBdir/ace.html
+endif
+
+#if min (?) gt (?) 
+#mail (?) alert
+

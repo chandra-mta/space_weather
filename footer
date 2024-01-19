@@ -11,7 +11,9 @@
 <IMG alt="ACE plotting tools" SRC="./COORDINATION/ACErtsw_logo.gif"></a></td>
 -->
 <td><a href="http://www.sec.noaa.gov/index.html"> 
+<!--
 <IMG alt="Space Environment Center" SRC="./COORDINATION/ssel.gif"></a></td>
+-->
 </tr>
 
 <!-- <a href="http://sec.noaa.gov/ace/ACErtsw_data.html">  -->
@@ -22,9 +24,11 @@ ACE SCIENCE CENTER</a></td>
 <td><a href="http://www.sec.noaa.gov/ace/ACErtsw_data.html"> 
 ACE plotting tools</a></td>
 -->
+<!--
 <td><a href="http://www.sec.noaa.gov/index.html"> 
 Space Environment Center</a></td>
 </tr>
+-->
 </table>
 <br>
 <hr>

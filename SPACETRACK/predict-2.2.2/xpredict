@@ -1,0 +1,12 @@
+# Uncomment the line that works best for you.
+# The first four lines work great under Slackware 8.x and 9.0.
+# Generally, rxvt requires less memory than other terminals.
+# The last line is for KDE users.
+#
+rxvt -geometry 80x25 -font 10x20 -rv -e predict $*
+#xterm -geometry 80x25 -fn 10x20 -rv -e predict $*
+#Eterm -g 80x25 -F 10x20 -x -e predict $1 $2 $3 $4
+#gnome-terminal --geometry 80x25 --disable-sound -e predict $*
+#rxvt -geometry 80x25 -font 10x20 -rv -tn linux -e predict $*
+#rxvt -geometry 80x25 -font 10x20 -rv -tn color_xterm -e predict $*
+#kvt -vt_geometry 80x25 -linux -e predict $*

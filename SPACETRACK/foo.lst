@@ -1,0 +1,4214 @@
+foo.f                      Mon May 24 17:51:19 2004                      page 1
+
+FILE  "foo.f"
+     1  *      DRIVER                                                 3 NOV 80
+     2  *   WGS-72 PHYSICAL AND GEOPOTENTIAL CONSTANTS
+     3  *          CK2= .5*J2*AE**2     CK4=-.375*J4*AE**4
+     4  
+     5        DOUBLE PRECISION EPOCH,DS50
+     6        COMMON/E1/XMO,XNODEO,OMEGAO,EO,XINCL,XNO,XNDT2O,XNDD6O,BSTAR,
+     7       1            X,Y,Z,XDOT,YDOT,ZDOT,JUNK,EPOCH,DS50
+     8        COMMON/C1/CK2,CK4,E6A,QOMS2T,S,TOTHRD,
+     9       1           XJ3,XKE,XKMPER,XMNPDA,AE
+    10        COMMON/C2/DE2RA,PI,PIO2,TWOPI,X3PIO2
+    11        DATA DE2RA,E6A,PI,PIO2,QO,SO,TOTHRD,TWOPI,X3PIO2,XJ2,XJ3,
+    12       1            XJ4,XKE,XKMPER,XMNPDA,AE/.174532925E-1,1.E-6,
+    13       2            3.14159265,1.57079633,120.0,78.0,.66666667,
+    14       4            6.2831853,4.71238898,1.082616E-3,-.253881E-5,
+    15       5            -1.65597E-6,.743669161E-1,6378.135,1440.,1./
+    16        DIMENSION ISET(5)
+    17        DATA (ISET(I),I=1,5)/3HSGP,4HSGP4,4HSDP4,4HSGP8,4HSDP8/
+    18  
+    19  *     SELECT EPHEMERIS TYPE AND OUTPUT TIMES
+    20  
+    21        CK2=.5*XJ2*AE**2
+    22        CK4=-.375*XJ4*AE**4
+    23        QOMS2T=((QO-SO)*AE/XKMPER)**4
+    24        S=AE*(1.+SO/XKMPER)
+    25   2    WRITE(6,*) 'Enter Model(1-5) StartT(min) EndT dT, then TLE:'
+    26        READ (5,*) IEPT,TS,TF,DELT
+    27        IF(IEPT.LE.0) STOP
+    28        IDEEP=0
+    29  
+    30  *     READ IN MEAN ELEMENTS FROM 2 CARD FORMAT
+    31  
+    32        READ (5,702) EPOCH,XNDT2O,XNDD6O,IEXP,BSTAR,IBEXP,XINCL,
+    33       1        XNODEO,EO,OMEGAO,XMO,XNO
+    34     7  IF(XNO.LE.0.) STOP
+           ^
+**** WAR  #315:  label "7" declared but never used
+    35        WRITE(6,704) ISET(IEPT)
+    36        IF(IEPT.GT.5) GO TO 900
+    37        XNDD6O=XNDD6O*(10.**IEXP)
+    38        XNODEO=XNODEO*DE2RA
+    39        OMEGAO=OMEGAO*DE2RA
+    40        XMO=XMO*DE2RA
+    41        XINCL=XINCL*DE2RA
+    42        TEMP=TWOPI/XMNPDA/XMNPDA
+    43        XNO=XNO*TEMP*XMNPDA
+    44        XNDT2O=XNDT2O*TEMP
+    45        XNDD6O=XNDD6O*TEMP/XMNPDA
+    46  
+    47  *     INPUT CHECK FOR PERIOD VS EPHEMERIS SELECTED
+    48  *     PERIOD GE 225 MINUTES  IS DEEP SPACE
+    49  
+    50        A1=(XKE/XNO)**TOTHRD
+    51        TEMP=1.5*CK2*(3.*COS(XINCL)**2-1.)/(1.-EO*EO)**1.5
+    52        DEL1=TEMP/(A1*A1)
+    53        AO=A1*(1.-DEL1*(.5*TOTHRD+DEL1*(1.+134./81.*DEL1)))
+    54        DELO=TEMP/(AO*AO)
+    55        XNODP=XNO/(1.+DELO)
+    56        IF((TWOPI/XNODP/XMNPDA) .GE. .15625) IDEEP=1
+    57  
+    58        BSTAR=BSTAR*(10.**IBEXP)/AE
+    59        TSINCE=TS
+    60        IFLAG=1
+    61        IF(IDEEP .EQ. 1 .AND. (IEPT .EQ. 1 .OR. IEPT .EQ. 2
+    62       1           .OR. IEPT .EQ. 4)) GO TO 800
+    63      9 IF(IDEEP .EQ. 0 .AND. (IEPT .EQ. 3 .OR. IEPT .EQ. 5))
+foo.f                      Mon May 24 17:51:19 2004                      page 2
+
+    64       1           GO TO 850
+    65     10 GO TO (21,22,23,24,25), IEPT
+    66     21 CALL SGP(IFLAG,TSINCE)
+    67        GO TO 60
+    68     22 CALL SGP4(IFLAG,TSINCE)
+    69        GO TO 60
+    70     23 CALL SDP4(IFLAG,TSINCE)
+    71        GO TO 60
+    72     24 CALL SGP8(IFLAG,TSINCE)
+    73        GO TO 60
+    74     25 CALL SDP8(IFLAG,TSINCE)
+    75     60 X=X*XKMPER/AE
+    76        Y=Y*XKMPER/AE
+    77        Z=Z*XKMPER/AE
+    78        XDOT=XDOT*XKMPER/AE*XMNPDA/86400.
+    79        YDOT=YDOT*XKMPER/AE*XMNPDA/86400.
+    80        ZDOT=ZDOT*XKMPER/AE*XMNPDA/86400.
+    81        WRITE(6,705) TSINCE,X,Y,Z,XDOT,YDOT,ZDOT
+    82        TSINCE=TSINCE+DELT
+    83        IF(ABS(TSINCE) .GT. ABS(TF)) GO TO 2
+    84        GO TO 10
+    85    701 FORMAT(29X,D14.8,1X,3F8.4,/,6X,F8.7,F8.4,1X,2F11.9,1X,F6.5,I2,
+            ^
+**** WAR  #315:  format "701" declared but never used
+    86       1       4X,F8.7,I2)
+    87    702 FORMAT(18X,D14.8,1X,F10.8,2(1X,F6.5,I2),/,7X,2(1X,F8.4),1X,
+    88       1       F7.7,2(1X,F8.4),1X,F11.8)
+    89    704 FORMAT(1X,A4,8H  TSINCE,
+    90       1     10X,6HX (km),11X,6HY (km),11X,6HZ (km),12X,
+    91       1     9HVX (km/s),8X,9HVY (km/s),8X,9HVZ (km/s))
+    92    705 FORMAT(7F17.8)
+    93    706 FORMAT(A80)
+            ^
+**** WAR  #315:  format "706" declared but never used
+    94    707 FORMAT(79X,A1)
+            ^
+**** WAR  #315:  format "707" declared but never used
+    95    930 FORMAT("SHOULD USE DEEP SPACE EPHEMERIS")
+    96    940 FORMAT("SHOULD USE NEAR EARTH EPHEMERIS")
+    97    950 FORMAT("EPHEMERIS NUMBER",I2," NOT LEGAL, WILL SKIP THIS CASE")
+    98    800 WRITE(6,930)
+    99        GO TO 9
+   100    850 WRITE(6,940)
+   101        GO TO 10
+   102    900 WRITE(6,950) IEPT
+   103        GO TO 2
+   104        END
+   105  
+   106        FUNCTION  ACTAN(SINX,COSX)
+   107        COMMON/C2/DE2RA,PI,PIO2,TWOPI,X3PIO2
+   108        ACTAN=0.
+   109        IF (COSX.EQ.0.  ) GO TO 5
+   110        IF (COSX.GT.0.  ) GO TO 1
+   111        ACTAN=PI
+   112        GO TO 7
+   113      1 IF (SINX.EQ.0.  ) GO TO 8
+   114        IF (SINX.GT.0.  ) GO TO 7
+   115        ACTAN=TWOPI
+   116        GO TO 7
+   117      5 IF (SINX.EQ.0.  ) GO TO 8
+   118         IF (SINX.GT.0.  ) GO TO 6
+   119        ACTAN=X3PIO2
+   120        GO TO 8
+   121      6 ACTAN=PIO2
+   122        GO TO 8
+   123      7 TEMP=SINX/COSX
+foo.f                      Mon May 24 17:51:19 2004                      page 3
+
+   124        ACTAN=ACTAN+ATAN(TEMP)
+   125      8 RETURN
+   126        END
+   127  
+   128  *      DEEP SPACE                                         31 OCT 80
+   129        SUBROUTINE DEEP
+                            ^
+**** WAR  #338:  subroutine "deep" never called from program
+   130        COMMON/E1/XMO,XNODEO,OMEGAO,EO,XINCL,XNO,XNDT2O,
+   131       1           XNDD6O,BSTAR,X,Y,Z,XDOT,YDOT,ZDOT,JUNK,EPOCH,DS50
+   132        COMMON/C1/CK2,CK4,E6A,QOMS2T,S,TOTHRD,
+                       ^
+**** WAR  #314:  members of common /c1/ not used in this subprogram
+   133       1           XJ3,XKE,XKMPER,XMNPDA,AE
+   134        COMMON/C2/DE2RA,PI,PIO2,TWOPI,X3PIO2
+   135        DOUBLE PRECISION EPOCH, DS50
+   136        DOUBLE PRECISION
+   137       *     DAY,PREEP,XNODCE,ATIME,DELT,SAVTSN,STEP2,STEPN,STEPP
+                     ^
+**** WAR  #380:  variable "day" used only in unreached code for entry "dpsec"
+   137       *     DAY,PREEP,XNODCE,ATIME,DELT,SAVTSN,STEP2,STEPN,STEPP
+                           ^
+**** WAR  #380:  variable "preep" used only in unreached code for entry "dpsec"
+   137       *     DAY,PREEP,XNODCE,ATIME,DELT,SAVTSN,STEP2,STEPN,STEPP
+                                  ^
+**** WAR  #380:  variable "xnodce" used only in unreached code for
+                 entry "dpsec"
+   137       *     DAY,PREEP,XNODCE,ATIME,DELT,SAVTSN,STEP2,STEPN,STEPP
+                                             ^
+**** WAR  #380:  variable "delt" used only in unreached code for entry "deep"
+   138        DATA              ZNS,           C1SS,          ZES/
+   139       A                  1.19459E-5,    2.9864797E-6, .01675/
+   140        DATA              ZNL,           C1L,           ZEL/
+   141       A                  1.5835218E-4,  4.7968065E-7,  .05490/
+   142        DATA              ZCOSIS,        ZSINIS,        ZSINGS/
+   143       A                  .91744867,     .39785416,     -.98088458/
+   144        DATA              ZCOSGS,        ZCOSHS,        ZSINHS/
+                                                    ^
+**** WAR  #320:  variable "zcoshs" set but never referenced
+   144        DATA              ZCOSGS,        ZCOSHS,        ZSINHS/
+                                                                   ^
+**** WAR  #320:  variable "zsinhs" set but never referenced
+   145       A                  .1945905,      1.0,           0.0/
+   146        DATA Q22,Q31,Q33/1.7891679E-6,2.1460748E-6,2.2123015E-7/
+   147        DATA G22,G32/5.7686396,0.95240898/
+   148        DATA G44,G52/1.8014998,1.0508330/
+   149        DATA G54/4.4108898/
+   150        DATA ROOT22,ROOT32/1.7891679E-6,3.7393792E-7/
+   151        DATA ROOT44,ROOT52/7.3636953E-9,1.1428639E-7/
+   152        DATA ROOT54/2.1765803E-9/
+   153        DATA THDT/4.3752691E-3/
+   154  
+   155  *     ENTRANCE FOR DEEP SPACE INITIALIZATION
+   156  
+   157        ENTRY DPINIT(EQSQ,SINIQ,COSIQ,RTEQSQ,AO,COSQ2,SINOMO,COSOMO,
+   158       1         BSQ,XLLDOT,OMGDT,XNODOT,XNODP)
+   159        THGR=THETAG(EPOCH)
+   160        EQ = EO
+   161        XNQ = XNODP
+                        ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   162        AQNV = 1./AO
+                         ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   163        XQNCL = XINCL
+   164        XMAO=XMO
+foo.f                      Mon May 24 17:51:19 2004                      page 4
+
+   165        XPIDOT=OMGDT+XNODOT
+                         ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   165        XPIDOT=OMGDT+XNODOT
+                                ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   166        SINQ = SIN(XNODEO)
+   167        COSQ = COS(XNODEO)
+   168        OMEGAQ = OMEGAO
+   169  
+   170  *     INITIALIZE LUNAR SOLAR TERMS
+   171  
+   172      5 DAY=DS50+18261.5D0
+            ^
+**** WAR  #315:  label "5" declared but never used
+   173        IF (DAY.EQ.PREEP)    GO TO 10
+                             ^
+**** WAR  #424:  variable "preep" is set to zero value by default
+   174        PREEP = DAY
+   175        XNODCE=4.5236020-9.2422029E-4*DAY
+   176        STEM=DSIN (XNODCE)
+   177        CTEM=DCOS (XNODCE)
+   178        ZCOSIL=.91375164-.03568096*CTEM
+   179        ZSINIL=SQRT (1.-ZCOSIL*ZCOSIL)
+   180        ZSINHL= .089683511*STEM/ZSINIL
+   181        ZCOSHL=SQRT (1.-ZSINHL*ZSINHL)
+   182        C=4.7199672+.22997150*DAY
+   183        GAM=5.8351514+.0019443680*DAY
+   184        ZMOL = FMOD2P(C-GAM)
+   185        ZX= .39785416*STEM/ZSINIL
+   186        ZY= ZCOSHL*CTEM+0.91744867*ZSINHL*STEM
+   187        ZX=ACTAN(ZX,ZY)
+   188        ZX=GAM+ZX-XNODCE
+   189        ZCOSGL=COS (ZX)
+   190        ZSINGL=SIN (ZX)
+   191        ZMOS=6.2565837D0+.017201977D0*DAY
+   192        ZMOS=FMOD2P(ZMOS)
+   193  
+   194  *     DO SOLAR TERMS
+   195  
+   196     10 LS = 0
+   197        SAVTSN=1.D20
+   198        ZCOSG=ZCOSGS
+   199        ZSING=ZSINGS
+   200        ZCOSI=ZCOSIS
+   201        ZSINI=ZSINIS
+   202        ZCOSH=COSQ
+   203        ZSINH=SINQ
+   204        CC=C1SS
+   205        ZN=ZNS
+   206        ZE=ZES
+   207        ZMO=ZMOS
+                ^
+**** WAR  #320:  variable "zmo" set but never referenced
+   208        XNOI=1./XNQ
+   209        ASSIGN 30 TO LS
+   210     20 A1=ZCOSG*ZCOSH+ZSING*ZCOSI*ZSINH
+   211        A3=-ZSING*ZCOSH+ZCOSG*ZCOSI*ZSINH
+   212        A7=-ZCOSG*ZSINH+ZSING*ZCOSI*ZCOSH
+   213        A8=ZSING*ZSINI
+   214        A9=ZSING*ZSINH+ZCOSG*ZCOSI*ZCOSH
+   215        A10=ZCOSG*ZSINI
+   216        A2= COSIQ*A7+ SINIQ*A8
+                      ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+foo.f                      Mon May 24 17:51:19 2004                      page 5
+
+   216        A2= COSIQ*A7+ SINIQ*A8
+                                ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   217        A4= COSIQ*A9+ SINIQ*A10
+   218        A5=- SINIQ*A7+ COSIQ*A8
+   219        A6=- SINIQ*A9+ COSIQ*A10
+   220  C
+   221        X1=A1*COSOMO+A2*SINOMO
+                         ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   221        X1=A1*COSOMO+A2*SINOMO
+                                   ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   222        X2=A3*COSOMO+A4*SINOMO
+   223        X3=-A1*SINOMO+A2*COSOMO
+   224        X4=-A3*SINOMO+A4*COSOMO
+   225        X5=A5*SINOMO
+   226        X6=A6*SINOMO
+   227        X7=A5*COSOMO
+   228        X8=A6*COSOMO
+   229  C
+   230        Z31=12.*X1*X1-3.*X3*X3
+   231        Z32=24.*X1*X2-6.*X3*X4
+   232        Z33=12.*X2*X2-3.*X4*X4
+   233        Z1=3.*(A1*A1+A2*A2)+Z31*EQSQ
+                                         ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   234        Z2=6.*(A1*A3+A2*A4)+Z32*EQSQ
+   235        Z3=3.*(A3*A3+A4*A4)+Z33*EQSQ
+   236        Z11=-6.*A1*A5+EQSQ *(-24.*X1*X7-6.*X3*X5)
+   237        Z12=-6.*(A1*A6+A3*A5)+EQSQ *(-24.*(X2*X7+X1*X8)-6.*(X3*X6+X4*X5))
+   238        Z13=-6.*A3*A6+EQSQ *(-24.*X2*X8-6.*X4*X6)
+   239        Z21=6.*A2*A5+EQSQ *(24.*X1*X5-6.*X3*X7)
+   240        Z22=6.*(A4*A5+A2*A6)+EQSQ *(24.*(X2*X5+X1*X6)-6.*(X4*X7+X3*X8))
+   241        Z23=6.*A4*A6+EQSQ *(24.*X2*X6-6.*X4*X8)
+   242        Z1=Z1+Z1+BSQ*Z31
+                         ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   243        Z2=Z2+Z2+BSQ*Z32
+   244        Z3=Z3+Z3+BSQ*Z33
+   245        S3=CC*XNOI
+   246        S2=-.5*S3/RTEQSQ
+                             ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   247        S4=S3*RTEQSQ
+   248        S1=-15.*EQ*S4
+   249        S5=X1*X3+X2*X4
+   250        S6=X2*X3+X1*X4
+   251        S7=X2*X4-X1*X3
+   252        SE=S1*ZN*S5
+   253        SI=S2*ZN*(Z11+Z13)
+   254        SL=-ZN*S3*(Z1+Z3-14.-6.*EQSQ)
+   255        SGH=S4*ZN*(Z31+Z33-6.)
+   256        SH=-ZN*S2*(Z21+Z23)
+   257        IF(XQNCL.LT.5.2359877E-2) SH=0.0
+   258        EE2=2.*S1*S6
+   259        E3=2.*S1*S7
+   260        XI2=2.*S2*Z12
+   261        XI3=2.*S2*(Z13-Z11)
+   262        XL2=-2.*S3*Z2
+   263        XL3=-2.*S3*(Z3-Z1)
+   264        XL4=-2.*S3*(-21.-9.*EQSQ)*ZE
+   265        XGH2=2.*S4*Z32
+   266        XGH3=2.*S4*(Z33-Z31)
+   267        XGH4=-18.*S4*ZE
+   268        XH2=-2.*S2*Z22
+foo.f                      Mon May 24 17:51:19 2004                      page 6
+
+   269        XH3=-2.*S2*(Z23-Z21)
+   270        GO TO LS
+   271  
+   272  *     DO LUNAR TERMS
+   273  
+   274     30 SSE = SE
+   275        SSI=SI
+   276        SSL=SL
+   277        SSH=SH/SINIQ
+   278        SSG=SGH-COSIQ*SSH
+   279        SE2=EE2
+   280        SI2=XI2
+   281        SL2=XL2
+   282        SGH2=XGH2
+   283        SH2=XH2
+   284        SE3=E3
+   285        SI3=XI3
+   286        SL3=XL3
+   287        SGH3=XGH3
+   288        SH3=XH3
+   289        SL4=XL4
+   290        SGH4=XGH4
+   291        LS=1
+   292        ZCOSG=ZCOSGL
+   293        ZSING=ZSINGL
+   294        ZCOSI=ZCOSIL
+   295        ZSINI=ZSINIL
+   296        ZCOSH=ZCOSHL*COSQ+ZSINHL*SINQ
+   297        ZSINH=SINQ*ZCOSHL-COSQ*ZSINHL
+   298        ZN=ZNL
+   299        CC=C1L
+   300        ZE=ZEL
+   301        ZMO=ZMOL
+   302        ASSIGN 40 TO LS
+   303        GO TO 20
+   304     40 SSE = SSE+SE
+   305        SSI=SSI+SI
+   306        SSL=SSL+SL
+   307        SSG=SSG+SGH-COSIQ/SINIQ*SH
+   308        SSH=SSH+SH/SINIQ
+   309  
+   310  *     GEOPOTENTIAL RESONANCE INITIALIZATION FOR 12 HOUR ORBITS
+   311  
+   312        IRESFL=0
+   313        ISYNFL=0
+   314        IF(XNQ.LT.(.0052359877).AND.XNQ.GT.(.0034906585)) GO TO 70
+                                    ^
+**** WAR  #370:  redundant parentheses
+   314        IF(XNQ.LT.(.0052359877).AND.XNQ.GT.(.0034906585)) GO TO 70
+                                                             ^
+**** WAR  #370:  redundant parentheses
+   315        IF (XNQ.LT.(8.26E-3) .OR. XNQ.GT.(9.24E-3))    RETURN
+                                 ^
+**** WAR  #370:  redundant parentheses
+   315        IF (XNQ.LT.(8.26E-3) .OR. XNQ.GT.(9.24E-3))    RETURN
+                                                       ^
+**** WAR  #370:  redundant parentheses
+   316        IF (EQ.LT.0.5)    RETURN
+   317        IRESFL =1
+   318        EOC=EQ*EQSQ
+   319        G201=-.306-(EQ-.64)*.440
+   320        IF(EQ.GT.(.65)) GO TO 45
+                           ^
+**** WAR  #370:  redundant parentheses
+   321        G211=3.616-13.247*EQ+16.290*EQSQ
+   322        G310=-19.302+117.390*EQ-228.419*EQSQ+156.591*EOC
+foo.f                      Mon May 24 17:51:19 2004                      page 7
+
+   323        G322=-18.9068+109.7927*EQ-214.6334*EQSQ+146.5816*EOC
+   324        G410=-41.122+242.694*EQ-471.094*EQSQ+313.953*EOC
+   325        G422=-146.407+841.880*EQ-1629.014*EQSQ+1083.435*EOC
+   326        G520=-532.114+3017.977*EQ-5740*EQSQ+3708.276*EOC
+   327        GO TO 55
+   328     45 G211=-72.099+331.819*EQ-508.738*EQSQ+266.724*EOC
+   329        G310=-346.844+1582.851*EQ-2415.925*EQSQ+1246.113*EOC
+   330        G322=-342.585+1554.908*EQ-2366.899*EQSQ+1215.972*EOC
+   331        G410=-1052.797+4758.686*EQ-7193.992*EQSQ+3651.957*EOC
+   332        G422=-3581.69+16178.11*EQ-24462.77*EQSQ+12422.52*EOC
+   333        IF(EQ.GT.(.715)) GO TO 50
+                            ^
+**** WAR  #370:  redundant parentheses
+   334        G520=1464.74-4664.75*EQ+3763.64*EQSQ
+   335        GO TO 55
+   336     50 G520=-5149.66+29936.92*EQ-54087.36*EQSQ+31324.56*EOC
+   337     55 IF(EQ.GE.(.7)) GO TO 60
+                          ^
+**** WAR  #370:  redundant parentheses
+   338        G533=-919.2277+4988.61*EQ-9064.77*EQSQ+5542.21*EOC
+   339        G521 = -822.71072+4568.6173*EQ-8491.4146*EQSQ+5337.524*EOC
+   340        G532 = -853.666+4690.25*EQ-8624.77*EQSQ+5341.4*EOC
+   341        GO TO 65
+   342     60 G533=-37995.78+161616.52*EQ-229838.2*EQSQ+109377.94*EOC
+   343        G521 = -51752.104+218913.95*EQ-309468.16*EQSQ+146349.42*EOC
+   344        G532 = -40023.88+170470.89*EQ-242699.48*EQSQ+115605.82*EOC
+   345     65 SINI2=SINIQ*SINIQ
+   346        F220=.75*(1.+2.*COSIQ+COSQ2)
+                                        ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   347        F221=1.5*SINI2
+   348        F321=1.875*SINIQ*(1.-2.*COSIQ-3.*COSQ2)
+   349        F322=-1.875*SINIQ*(1.+2.*COSIQ-3.*COSQ2)
+   350        F441=35.*SINI2*F220
+   351        F442=39.3750*SINI2*SINI2
+   352        F522=9.84375*SINIQ*(SINI2*(1.-2.*COSIQ-5.*COSQ2)
+   353       1     +.33333333*(-2.+4.*COSIQ+6.*COSQ2))
+   354        F523 = SINIQ*(4.92187512*SINI2*(-2.-4.*COSIQ+10.*COSQ2)
+   355       *      +6.56250012*(1.+2.*COSIQ-3.*COSQ2))
+   356        F542 = 29.53125*SINIQ*(2.-8.*COSIQ+COSQ2*(-12.+8.*COSIQ
+   357       *      +10.*COSQ2))
+   358        F543=29.53125*SINIQ*(-2.-8.*COSIQ+COSQ2*(12.+8.*COSIQ-10.*COSQ2))
+   359        XNO2=XNQ*XNQ
+   360        AINV2=AQNV*AQNV
+   361        TEMP1 = 3.*XNO2*AINV2
+   362        TEMP = TEMP1*ROOT22
+   363        D2201 = TEMP*F220*G201
+   364        D2211 = TEMP*F221*G211
+   365        TEMP1 = TEMP1*AQNV
+   366        TEMP = TEMP1*ROOT32
+   367        D3210 = TEMP*F321*G310
+   368        D3222 = TEMP*F322*G322
+   369        TEMP1 = TEMP1*AQNV
+   370        TEMP = 2.*TEMP1*ROOT44
+   371        D4410 = TEMP*F441*G410
+   372        D4422 = TEMP*F442*G422
+   373        TEMP1 = TEMP1*AQNV
+   374        TEMP = TEMP1*ROOT52
+   375        D5220 = TEMP*F522*G520
+   376        D5232 = TEMP*F523*G532
+   377        TEMP = 2.*TEMP1*ROOT54
+   378        D5421 = TEMP*F542*G521
+   379        D5433 = TEMP*F543*G533
+   380        XLAMO = XMAO+XNODEO+XNODEO-THGR-THGR
+foo.f                      Mon May 24 17:51:19 2004                      page 8
+
+   381        BFACT = XLLDOT+XNODOT+XNODOT-THDT-THDT
+                           ^
+**** ERR  #407:  inconsistent usage of dummy argument on "deep" invocation
+   382        BFACT=BFACT+SSL+SSH+SSH
+   383        GO TO 80
+   384  
+   385  *      SYNCHRONOUS RESONANCE TERMS INITIALIZATION
+   386  
+   387     70 IRESFL=1
+   388        ISYNFL=1
+   389        G200=1.0+EQSQ*(-2.5+.8125*EQSQ)
+   390        G310=1.0+2.0*EQSQ
+   391        G300=1.0+EQSQ*(-6.0+6.60937*EQSQ)
+   392        F220=.75*(1.+COSIQ)*(1.+COSIQ)
+   393        F311=.9375*SINIQ*SINIQ*(1.+3.*COSIQ)-.75*(1.+COSIQ)
+   394        F330=1.+COSIQ
+   395        F330=1.875*F330*F330*F330
+   396        DEL1=3.*XNQ*XNQ*AQNV*AQNV
+   397        DEL2=2.*DEL1*F220*G200*Q22
+   398        DEL3=3.*DEL1*F330*G300*Q33*AQNV
+   399        DEL1=DEL1*F311*G310*Q31*AQNV
+   400        FASX2=.13130908
+   401        FASX4=2.8843198
+   402        FASX6=.37448087
+   403        XLAMO=XMAO+XNODEO+OMEGAO-THGR
+   404        BFACT = XLLDOT+XPIDOT-THDT
+   405        BFACT=BFACT+SSL+SSG+SSH
+   406     80 XFACT=BFACT-XNQ
+   407  C
+   408  C     INITIALIZE INTEGRATOR
+   409  C
+   410        XLI=XLAMO
+   411        XNI=XNQ
+   412        ATIME=0.D0
+   413        STEPP=720.D0
+   414        STEPN=-720.D0
+   415        STEP2 = 259200.D0
+   416        RETURN
+   417  
+   418  *     ENTRANCE FOR DEEP SPACE SECULAR EFFECTS
+   419  
+   420        ENTRY DPSEC(XLL,OMGASM,XNODES,EM,XINC,XN,T)
+   421        XLL=XLL+SSL*T
+   422        OMGASM=OMGASM+SSG*T
+   423        XNODES=XNODES+SSH*T
+   424        EM=EO+SSE*T
+   425        XINC=XINCL+SSI*T
+   426        IF(XINC .GE. 0.) GO TO 90
+   427        XINC = -XINC
+   428        XNODES = XNODES + PI
+   429        OMGASM = OMGASM - PI
+   430     90 IF(IRESFL .EQ. 0) RETURN
+   431    100 IF (ATIME.EQ.0.D0)    GO TO 170
+   432        IF(T.GE.(0.D0).AND.ATIME.LT.(0.D0)) GO TO 170
+                           ^
+**** WAR  #370:  redundant parentheses
+   432        IF(T.GE.(0.D0).AND.ATIME.LT.(0.D0)) GO TO 170
+                                               ^
+**** WAR  #370:  redundant parentheses
+   433        IF(T.LT.(0.D0).AND.ATIME.GE.(0.D0)) GO TO 170
+                           ^
+**** WAR  #370:  redundant parentheses
+   433        IF(T.LT.(0.D0).AND.ATIME.GE.(0.D0)) GO TO 170
+                                               ^
+**** WAR  #370:  redundant parentheses
+foo.f                      Mon May 24 17:51:19 2004                      page 9
+
+   434    105 IF(ABS(T).GE.ABS(ATIME)) GO TO 120
+            ^
+**** WAR  #315:  label "105" declared but never used
+   435        DELT=STEPP
+   436        IF (T.GE.0.D0)    DELT = STEPN
+   437    110 ASSIGN 100 TO IRET
+            ^
+**** WAR  #315:  label "110" declared but never used
+   438        GO TO 160
+   439    120 DELT=STEPN
+   440        IF (T.GT.0.D0)    DELT = STEPP
+   441    125 IF (ABS(T-ATIME).LT.STEPP)    GO TO 130
+   442        ASSIGN 125 TO IRET
+   443        GO TO 160
+   444    130 FT = T-ATIME
+   445        ASSIGN 140 TO IRETN
+   446        GO TO 150
+   447    140 XN = XNI+XNDOT*FT+XNDDT*FT*FT*0.5
+   448        XL = XLI+XLDOT*FT+XNDOT*FT*FT*0.5
+   449        TEMP = -XNODES+THGR+T*THDT
+   450        XLL = XL-OMGASM+TEMP
+   451        IF (ISYNFL.EQ.0)    XLL = XL+TEMP+TEMP
+   452        RETURN
+   453  C
+   454  C     DOT TERMS CALCULATED
+   455  C
+   456    150 IF (ISYNFL.EQ.0)    GO TO 152
+   457        XNDOT=DEL1*SIN (XLI-FASX2)+DEL2*SIN (2.*(XLI-FASX4))
+   458       1     +DEL3*SIN (3.*(XLI-FASX6))
+   459        XNDDT = DEL1*COS(XLI-FASX2)
+   460       *       +2.*DEL2*COS(2.*(XLI-FASX4))
+   461       *       +3.*DEL3*COS(3.*(XLI-FASX6))
+   462        GO TO 154
+   463    152 XOMI = OMEGAQ+OMGDT*ATIME
+                                ^
+**** ERR  #407:  inconsistent usage of dummy argument on "dpsec" invocation
+   464        X2OMI = XOMI+XOMI
+   465        X2LI = XLI+XLI
+   466        XNDOT = D2201*SIN(X2OMI+XLI-G22)
+   467       *       +D2211*SIN(XLI-G22)
+   468       *       +D3210*SIN(XOMI+XLI-G32)
+   469       *       +D3222*SIN(-XOMI+XLI-G32)
+   470       *       +D4410*SIN(X2OMI+X2LI-G44)
+   471       *       +D4422*SIN(X2LI-G44)
+   472       *       +D5220*SIN(XOMI+XLI-G52)
+   473       *       +D5232*SIN(-XOMI+XLI-G52)
+   474       *       +D5421*SIN(XOMI+X2LI-G54)
+   475       *       +D5433*SIN(-XOMI+X2LI-G54)
+   476        XNDDT = D2201*COS(X2OMI+XLI-G22)
+   477       *       +D2211*COS(XLI-G22)
+   478       *       +D3210*COS(XOMI+XLI-G32)
+   479       *       +D3222*COS(-XOMI+XLI-G32)
+   480       *       +D5220*COS(XOMI+XLI-G52)
+   481       *       +D5232*COS(-XOMI+XLI-G52)
+   482       *       +2.*(D4410*COS(X2OMI+X2LI-G44)
+   483       *       +D4422*COS(X2LI-G44)
+   484       *       +D5421*COS(XOMI+X2LI-G54)
+   485       *       +D5433*COS(-XOMI+X2LI-G54))
+   486    154 XLDOT=XNI+XFACT
+   487        XNDDT = XNDDT*XLDOT
+   488        GO TO IRETN
+   489  C
+   490  C     INTEGRATOR
+   491  C
+   492    160 ASSIGN 165 TO IRETN
+   493        GO TO 150
+foo.f                     Mon May 24 17:51:19 2004                     page 10
+
+   494    165 XLI = XLI+XLDOT*DELT+XNDOT*STEP2
+   495        XNI = XNI+XNDOT*DELT+XNDDT*STEP2
+   496        ATIME=ATIME+DELT
+   497        GO TO IRET
+   498  C
+   499  C     EPOCH RESTART
+   500  C
+   501    170 IF (T.GE.0.D0)    GO TO 175
+   502        DELT=STEPN
+   503        GO TO 180
+   504    175 DELT = STEPP
+   505    180 ATIME = 0.D0
+   506        XNI=XNQ
+   507        XLI=XLAMO
+   508        GO TO 125
+   509  C
+   510  C     ENTRANCES FOR LUNAR-SOLAR PERIODICS
+   511  C
+   512  C
+   513        ENTRY DPPER(EM,XINC,OMGASM,XNODES,XLL)
+   514        SINIS = SIN(XINC)
+   515        COSIS = COS(XINC)
+   516        IF (ABS(SAVTSN-T).LT.(30.D0))    GO TO 210
+                             ^
+**** ERR  #407:  inconsistent usage of dummy argument on "dpper" invocation
+   516        IF (ABS(SAVTSN-T).LT.(30.D0))    GO TO 210
+                                         ^
+**** WAR  #370:  redundant parentheses
+   517        SAVTSN=T
+   518        ZM=ZMOS+ZNS*T
+   519    205 ZF=ZM+2.*ZES*SIN (ZM)
+            ^
+**** WAR  #315:  label "205" declared but never used
+   520        SINZF=SIN (ZF)
+   521        F2=.5*SINZF*SINZF-.25
+   522        F3=-.5*SINZF*COS (ZF)
+   523        SES=SE2*F2+SE3*F3
+   524        SIS=SI2*F2+SI3*F3
+   525        SLS=SL2*F2+SL3*F3+SL4*SINZF
+   526        SGHS=SGH2*F2+SGH3*F3+SGH4*SINZF
+   527        SHS=SH2*F2+SH3*F3
+   528        ZM=ZMOL+ZNL*T
+   529        ZF=ZM+2.*ZEL*SIN (ZM)
+   530        SINZF=SIN (ZF)
+   531        F2=.5*SINZF*SINZF-.25
+   532        F3=-.5*SINZF*COS (ZF)
+   533        SEL=EE2*F2+E3*F3
+   534        SIL=XI2*F2+XI3*F3
+   535        SLL=XL2*F2+XL3*F3+XL4*SINZF
+   536        SGHL=XGH2*F2+XGH3*F3+XGH4*SINZF
+   537        SHL=XH2*F2+XH3*F3
+   538        PE=SES+SEL
+   539        PINC=SIS+SIL
+   540        PL=SLS+SLL
+   541    210 PGH=SGHS+SGHL
+   542        PH=SHS+SHL
+   543        XINC = XINC+PINC
+   544        EM = EM+PE
+   545        IF(XQNCL.LT.(.2)) GO TO 220
+                             ^
+**** WAR  #370:  redundant parentheses
+   546        GO TO 218
+   547  C
+   548  C     APPLY PERIODICS DIRECTLY
+   549  C
+foo.f                     Mon May 24 17:51:19 2004                     page 11
+
+   550    218 PH=PH/SINIQ
+                        ^
+**** ERR  #407:  inconsistent usage of dummy argument on "dpper" invocation
+   551        PGH=PGH-COSIQ*PH
+                          ^
+**** ERR  #407:  inconsistent usage of dummy argument on "dpper" invocation
+   552        OMGASM=OMGASM+PGH
+   553        XNODES=XNODES+PH
+   554        XLL = XLL+PL
+   555        GO TO 230
+   556  C
+   557  C     APPLY PERIODICS WITH LYDDANE MODIFICATION
+   558  C
+   559    220 SINOK=SIN(XNODES)
+   560        COSOK=COS(XNODES)
+   561        ALFDP=SINIS*SINOK
+   562        BETDP=SINIS*COSOK
+   563        DALF=PH*COSOK+PINC*COSIS*SINOK
+   564        DBET=-PH*SINOK+PINC*COSIS*COSOK
+   565        ALFDP=ALFDP+DALF
+   566        BETDP=BETDP+DBET
+   567        XLS = XLL+OMGASM+COSIS*XNODES
+   568        DLS=PL+PGH-PINC*XNODES*SINIS
+   569        XLS=XLS+DLS
+   570        XNODES=ACTAN(ALFDP,BETDP)
+   571        XLL = XLL+PL
+   572        OMGASM = XLS-XLL-COS(XINC)*XNODES
+   573    230 CONTINUE
+   574        RETURN
+   575        END
+   576  
+   577        FUNCTION FMOD2P(X)
+   578        COMMON/C2/DE2RA,PI,PIO2,TWOPI,X3PIO2
+   579        FMOD2P=X
+   580        I=FMOD2P/TWOPI
+   581         FMOD2P=FMOD2P-I*TWOPI
+   582        IF(FMOD2P.LT.0) FMOD2P=FMOD2P+TWOPI
+   583        RETURN
+   584        END
+   585  
+   586  *      SDP4                                               3 NOV 80
+   587        SUBROUTINE SDP4(IFLAG,TSINCE)
+   588        COMMON/E1/XMO,XNODEO,OMEGAO,EO,XINCL,XNO,XNDT2O,
+   589       1           XNDD6O,BSTAR,X,Y,Z,XDOT,YDOT,ZDOT,JUNK,EPOCH,DS50
+   590        COMMON/C1/CK2,CK4,E6A,QOMS2T,S,TOTHRD,
+   591       1           XJ3,XKE,XKMPER,XMNPDA,AE
+   592        DOUBLE PRECISION EPOCH, DS50
+   593  
+   594        IF  (IFLAG .EQ. 0) GO TO 100
+   595  
+   596  *      RECOVER ORIGINAL MEAN MOTION (XNODP) AND SEMIMAJOR AXIS (AODP)
+   597  *      FROM INPUT ELEMENTS
+   598  
+   599        A1=(XKE/XNO)**TOTHRD
+   600        COSIO=COS(XINCL)
+   601        THETA2=COSIO*COSIO
+   602        X3THM1=3.*THETA2-1.
+   603        EOSQ=EO*EO
+   604        BETAO2=1.-EOSQ
+   605        BETAO=SQRT(BETAO2)
+   606        DEL1=1.5*CK2*X3THM1/(A1*A1*BETAO*BETAO2)
+   607        AO=A1*(1.-DEL1*(.5*TOTHRD+DEL1*(1.+134./81.*DEL1)))
+   608        DELO=1.5*CK2*X3THM1/(AO*AO*BETAO*BETAO2)
+   609        XNODP=XNO/(1.+DELO)
+   610        AODP=AO/(1.-DELO)
+   611  
+foo.f                     Mon May 24 17:51:19 2004                     page 12
+
+   612  *      INITIALIZATION
+   613  
+   614  *      FOR PERIGEE BELOW 156 KM, THE VALUES OF
+   615  *      S AND QOMS2T ARE ALTERED
+   616  
+   617        S4=S
+   618        QOMS24=QOMS2T
+   619        PERIGE=(AODP*(1.-EO)-AE)*XKMPER
+   620        IF(PERIGE .GE. 156.) GO TO 10
+   621        S4=PERIGE-78.
+   622        IF(PERIGE .GT. 98.) GO TO 9
+   623        S4=20.
+   624      9 QOMS24=((120.-S4)*AE/XKMPER)**4
+   625        S4=S4/XKMPER+AE
+   626     10 PINVSQ=1./(AODP*AODP*BETAO2*BETAO2)
+   627        SING=SIN(OMEGAO)
+   628        COSG=COS(OMEGAO)
+   629        TSI=1./(AODP-S4)
+   630        ETA=AODP*EO*TSI
+   631        ETASQ=ETA*ETA
+   632        EETA=EO*ETA
+   633        PSISQ=ABS(1.-ETASQ)
+   634        COEF=QOMS24*TSI**4
+   635        COEF1=COEF/PSISQ**3.5
+   636        C2=COEF1*XNODP*(AODP*(1.+1.5*ETASQ+EETA*(4.+ETASQ))+.75*
+   637       1         CK2*TSI/PSISQ*X3THM1*(8.+3.*ETASQ*(8.+ETASQ)))
+   638        C1=BSTAR*C2
+   639        SINIO=SIN(XINCL)
+   640        A3OVK2=-XJ3/CK2*AE**3
+   641        X1MTH2=1.-THETA2
+   642        C4=2.*XNODP*COEF1*AODP*BETAO2*(ETA*
+   643       1         (2.+.5*ETASQ)+EO*(.5+2.*ETASQ)-2.*CK2*TSI/
+   644       2         (AODP*PSISQ)*(-3.*X3THM1*(1.-2.*EETA+ETASQ*
+   645       3         (1.5-.5*EETA))+.75*X1MTH2*(2.*ETASQ-EETA*
+   646       4         (1.+ETASQ))*COS(2.*OMEGAO)))
+   647        THETA4=THETA2*THETA2
+   648        TEMP1=3.*CK2*PINVSQ*XNODP
+   649        TEMP2=TEMP1*CK2*PINVSQ
+   650        TEMP3=1.25*CK4*PINVSQ*PINVSQ*XNODP
+   651        XMDOT=XNODP+.5*TEMP1*BETAO*X3THM1+.0625*TEMP2*BETAO*
+   652       1         (13.-78.*THETA2+137.*THETA4)
+   653        X1M5TH=1.-5.*THETA2
+   654        OMGDOT=-.5*TEMP1*X1M5TH+.0625*TEMP2*(7.-114.*THETA2+
+   655       1         395.*THETA4)+TEMP3*(3.-36.*THETA2+49.*THETA4)
+   656        XHDOT1=-TEMP1*COSIO
+   657        XNODOT=XHDOT1+(.5*TEMP2*(4.-19.*THETA2)+2.*TEMP3*(3.-
+   658       1         7.*THETA2))*COSIO
+   659        XNODCF=3.5*BETAO2*XHDOT1*C1
+   660        T2COF=1.5*C1
+   661        XLCOF=.125*A3OVK2*SINIO*(3.+5.*COSIO)/(1.+COSIO)
+   662        AYCOF=.25*A3OVK2*SINIO
+   663        X7THM1=7.*THETA2-1.
+   664     90 IFLAG=0
+            ^
+**** WAR  #315:  label "90" declared but never used
+   665        CALL DPINIT(EOSQ,SINIO,COSIO,BETAO,AODP,THETA2,
+   666       1         SING,COSG,BETAO2,XMDOT,OMGDOT,XNODOT,XNODP)
+   667  
+   668  *      UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
+   669  
+   670    100 XMDF=XMO+XMDOT*TSINCE
+   671        OMGADF=OMEGAO+OMGDOT*TSINCE
+   672        XNODDF=XNODEO+XNODOT*TSINCE
+   673        TSQ=TSINCE*TSINCE
+   674        XNODE=XNODDF+XNODCF*TSQ
+   675        TEMPA=1.-C1*TSINCE
+foo.f                     Mon May 24 17:51:19 2004                     page 13
+
+   676        TEMPE=BSTAR*C4*TSINCE
+   677        TEMPL=T2COF*TSQ
+   678        XN=XNODP
+   679        CALL DPSEC(XMDF,OMGADF,XNODE,EM,XINC,XN,TSINCE)
+   680        A=(XKE/XN)**TOTHRD*TEMPA**2
+   681        E=EM-TEMPE
+   682        XMAM=XMDF+XNODP*TEMPL
+   683        CALL DPPER(E,XINC,OMGADF,XNODE,XMAM)
+   684        XL=XMAM+OMGADF+XNODE
+   685        BETA=SQRT(1.-E*E)
+   686        XN=XKE/A**1.5
+   687  
+   688  *      LONG PERIOD PERIODICS
+   689  
+   690        AXN=E*COS(OMGADF)
+   691        TEMP=1./(A*BETA*BETA)
+   692        XLL=TEMP*XLCOF*AXN
+   693        AYNL=TEMP*AYCOF
+   694        XLT=XL+XLL
+   695        AYN=E*SIN(OMGADF)+AYNL
+   696  
+   697  *      SOLVE KEPLERS EQUATION
+   698  
+   699        CAPU=FMOD2P(XLT-XNODE)
+   700        TEMP2=CAPU
+   701        DO 130 I=1,10
+   702        SINEPW=SIN(TEMP2)
+   703        COSEPW=COS(TEMP2)
+   704        TEMP3=AXN*SINEPW
+   705        TEMP4=AYN*COSEPW
+   706        TEMP5=AXN*COSEPW
+   707        TEMP6=AYN*SINEPW
+   708        EPW=(CAPU-TEMP4+TEMP3-TEMP2)/(1.-TEMP5-TEMP6)+TEMP2
+   709        IF(ABS(EPW-TEMP2) .LE. E6A) GO TO 140
+   710    130 TEMP2=EPW
+   711  
+   712  *      SHORT PERIOD PRELIMINARY QUANTITIES
+   713  
+   714    140 ECOSE=TEMP5+TEMP6
+   715        ESINE=TEMP3-TEMP4
+   716        ELSQ=AXN*AXN+AYN*AYN
+   717        TEMP=1.-ELSQ
+   718        PL=A*TEMP
+   719        R=A*(1.-ECOSE)
+   720        TEMP1=1./R
+   721        RDOT=XKE*SQRT(A)*ESINE*TEMP1
+   722        RFDOT=XKE*SQRT(PL)*TEMP1
+   723        TEMP2=A*TEMP1
+   724        BETAL=SQRT(TEMP)
+   725        TEMP3=1./(1.+BETAL)
+   726        COSU=TEMP2*(COSEPW-AXN+AYN*ESINE*TEMP3)
+   727        SINU=TEMP2*(SINEPW-AYN-AXN*ESINE*TEMP3)
+   728        U=ACTAN(SINU,COSU)
+   729        SIN2U=2.*SINU*COSU
+   730        COS2U=2.*COSU*COSU-1.
+   731        TEMP=1./PL
+   732        TEMP1=CK2*TEMP
+   733        TEMP2=TEMP1*TEMP
+   734  
+   735  *      UPDATE FOR SHORT PERIODICS
+   736  
+   737        RK=R*(1.-1.5*TEMP2*BETAL*X3THM1)+.5*TEMP1*X1MTH2*COS2U
+   738        UK=U-.25*TEMP2*X7THM1*SIN2U
+   739        XNODEK=XNODE+1.5*TEMP2*COSIO*SIN2U
+   740        XINCK=XINC+1.5*TEMP2*COSIO*SINIO*COS2U
+   741        RDOTK=RDOT-XN*TEMP1*X1MTH2*SIN2U
+foo.f                     Mon May 24 17:51:19 2004                     page 14
+
+   742        RFDOTK=RFDOT+XN*TEMP1*(X1MTH2*COS2U+1.5*X3THM1)
+   743  
+   744  *      ORIENTATION VECTORS
+   745  
+   746        SINUK=SIN(UK)
+   747        COSUK=COS(UK)
+   748        SINIK=SIN(XINCK)
+   749        COSIK=COS(XINCK)
+   750        SINNOK=SIN(XNODEK)
+   751        COSNOK=COS(XNODEK)
+   752        XMX=-SINNOK*COSIK
+   753        XMY=COSNOK*COSIK
+   754        UX=XMX*SINUK+COSNOK*COSUK
+   755        UY=XMY*SINUK+SINNOK*COSUK
+   756        UZ=SINIK*SINUK
+   757        VX=XMX*COSUK-COSNOK*SINUK
+   758        VY=XMY*COSUK-SINNOK*SINUK
+   759        VZ=SINIK*COSUK
+   760  
+   761  *      POSITION AND VELOCITY
+   762  
+   763        X=RK*UX
+   764        Y=RK*UY
+   765        Z=RK*UZ
+   766        XDOT=RDOTK*UX+RFDOTK*VX
+   767        YDOT=RDOTK*UY+RFDOTK*VY
+   768        ZDOT=RDOTK*UZ+RFDOTK*VZ
+   769  
+   770        RETURN
+   771        END
+   772  
+   773  *      SDP8                                              14 NOV 80
+   774        SUBROUTINE SDP8(IFLAG,TSINCE)
+   775        COMMON/E1/XMO,XNODEO,OMEGAO,EO,XINCL,XNO,XNDT2O,
+   776       1           XNDD6O,BSTAR,X,Y,Z,XDOT,YDOT,ZDOT,JUNK,EPOCH,DS50
+   777        COMMON/C1/CK2,CK4,E6A,QOMS2T,S,TOTHRD,
+   778       1           XJ3,XKE,XKMPER,XMNPDA,AE
+   779        DOUBLE PRECISION EPOCH, DS50
+   780        DATA RHO/.15696615/
+   781  
+   782        IF (IFLAG .EQ. 0) GO TO 100
+   783  
+   784  *      RECOVER ORIGINAL MEAN MOTION (XNODP) AND SEMIMAJOR AXIS (AODP)
+   785  *      FROM INPUT ELEMENTS --------- CALCULATE BALLISTIC COEFFICIENT
+   786  *      (B TERM) FROM INPUT B* DRAG TERM
+   787  
+   788        A1=(XKE/XNO)**TOTHRD
+   789        COSI=COS(XINCL)
+   790        THETA2=COSI*COSI
+   791        TTHMUN=3.*THETA2-1.
+   792        EOSQ=EO*EO
+   793        BETAO2=1.-EOSQ
+   794        BETAO=SQRT(BETAO2)
+   795        DEL1=1.5*CK2*TTHMUN/(A1*A1*BETAO*BETAO2)
+   796        AO=A1*(1.-DEL1*(.5*TOTHRD+DEL1*(1.+134./81.*DEL1)))
+   797        DELO=1.5*CK2*TTHMUN/(AO*AO*BETAO*BETAO2)
+   798        AODP=AO/(1.-DELO)
+   799        XNODP=XNO/(1.+DELO)
+   800        B=2.*BSTAR/RHO
+   801  
+   802  *      INITIALIZATION
+   803  
+   804        PO=AODP*BETAO2
+   805        POM2=1./(PO*PO)
+   806        SINI=SIN(XINCL)
+   807        SING=SIN(OMEGAO)
+foo.f                     Mon May 24 17:51:19 2004                     page 15
+
+   808        COSG=COS(OMEGAO)
+   809        TEMP=.5*XINCL
+   810        SINIO2=SIN(TEMP)
+   811        COSIO2=COS(TEMP)
+   812        THETA4=THETA2**2
+   813        UNM5TH=1.-5.*THETA2
+   814        UNMTH2=1.-THETA2
+   815        A3COF=-XJ3/CK2*AE**3
+   816        PARDT1=3.*CK2*POM2*XNODP
+   817        PARDT2=PARDT1*CK2*POM2
+   818        PARDT4=1.25*CK4*POM2*POM2*XNODP
+   819        XMDT1=.5*PARDT1*BETAO*TTHMUN
+   820        XGDT1=-.5*PARDT1*UNM5TH
+   821        XHDT1=-PARDT1*COSI
+   822        XLLDOT=XNODP+XMDT1+
+   823       2           .0625*PARDT2*BETAO*(13.-78.*THETA2+137.*THETA4)
+   824        OMGDT=XGDT1+
+   825       1      .0625*PARDT2*(7.-114.*THETA2+395.*THETA4)+PARDT4*(3.-36.*
+   826       2         THETA2+49.*THETA4)
+   827        XNODOT=XHDT1+
+   828       1       (.5*PARDT2*(4.-19.*THETA2)+2.*PARDT4*(3.-7.*THETA2))*COSI
+   829        TSI=1./(PO-S)
+   830        ETA=EO*S*TSI
+   831        ETA2=ETA**2
+   832        PSIM2=ABS(1./(1.-ETA2))
+   833        ALPHA2=1.+EOSQ
+   834        EETA=EO*ETA
+   835        COS2G=2.*COSG**2-1.
+   836        D5=TSI*PSIM2
+   837        D1=D5/PO
+   838        D2=12.+ETA2*(36.+4.5*ETA2)
+   839        D3=ETA2*(15.+2.5*ETA2)
+   840        D4=ETA*(5.+3.75*ETA2)
+   841        B1=CK2*TTHMUN
+   842        B2=-CK2*UNMTH2
+   843        B3=A3COF*SINI
+   844        C0=.5*B*RHO*QOMS2T*XNODP*AODP*TSI**4*PSIM2**3.5/SQRT(ALPHA2)
+   845        C1=1.5*XNODP*ALPHA2**2*C0
+   846        C4=D1*D3*B2
+   847        C5=D5*D4*B3
+   848        XNDT=C1*(
+   849       1  (2.+ETA2*(3.+34.*EOSQ)+5.*EETA*(4.+ETA2)+8.5*EOSQ)+
+   850       1   D1*D2*B1+   C4*COS2G+C5*SING)
+   851        XNDTN=XNDT/XNODP
+   852        EDOT=-TOTHRD*XNDTN*(1.-EO)
+   853        IFLAG=0
+   854        CALL DPINIT(EOSQ,SINI,COSI,BETAO,AODP,THETA2,SING,COSG,
+   855       1          BETAO2,XLLDOT,OMGDT,XNODOT,XNODP)
+   856  
+   857  *      UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
+   858  
+   859    100 Z1=.5*XNDT*TSINCE*TSINCE
+   860        Z7=3.5*TOTHRD*Z1/XNODP
+   861        XMAMDF=XMO+XLLDOT*TSINCE
+   862        OMGASM=OMEGAO+OMGDT*TSINCE+Z7*XGDT1
+   863        XNODES=XNODEO+XNODOT*TSINCE+Z7*XHDT1
+   864        XN=XNODP
+   865        CALL DPSEC(XMAMDF,OMGASM,XNODES,EM,XINC,XN,TSINCE)
+   866        XN=XN+XNDT*TSINCE
+   867        EM=EM+EDOT*TSINCE
+   868        XMAM=XMAMDF+Z1+Z7*XMDT1
+   869        CALL DPPER(EM,XINC,OMGASM,XNODES,XMAM)
+   870        XMAM=FMOD2P(XMAM)
+   871  
+   872  *      SOLVE KEPLERS EQUATION
+   873  
+foo.f                     Mon May 24 17:51:19 2004                     page 16
+
+   874        ZC2=XMAM+EM*SIN(XMAM)*(1.+EM*COS(XMAM))
+   875        DO 130 I=1,10
+   876        SINE=SIN(ZC2)
+   877        COSE=COS(ZC2)
+   878        ZC5=1./(1.-EM*COSE)
+   879        CAPE=(XMAM+EM*SINE-ZC2)*
+   880       1   ZC5+ZC2
+   881        IF(ABS(CAPE-ZC2) .LE. E6A) GO TO 140
+   882    130 ZC2=CAPE
+   883  
+   884  *      SHORT PERIOD PRELIMINARY QUANTITIES
+   885  
+   886    140 AM=(XKE/XN)**TOTHRD
+   887        BETA2M=1.-EM*EM
+   888        SINOS=SIN(OMGASM)
+   889        COSOS=COS(OMGASM)
+   890        AXNM=EM*COSOS
+   891        AYNM=EM*SINOS
+   892        PM=AM*BETA2M
+   893        G1=1./PM
+   894        G2=.5*CK2*G1
+   895        G3=G2*G1
+   896        BETA=SQRT(BETA2M)
+   897        G4=.25*A3COF*SINI
+   898        G5=.25*A3COF*G1
+   899        SNF=BETA*SINE*ZC5
+   900        CSF=(COSE-EM)*ZC5
+   901        FM=ACTAN(SNF,CSF)
+   902        SNFG=SNF*COSOS+CSF*SINOS
+   903        CSFG=CSF*COSOS-SNF*SINOS
+   904        SN2F2G=2.*SNFG*CSFG
+   905        CS2F2G=2.*CSFG**2-1.
+   906        ECOSF=EM*CSF
+   907        G10=FM-XMAM+EM*SNF
+   908        RM=PM/(1.+ECOSF)
+   909        AOVR=AM/RM
+   910        G13=XN*AOVR
+   911        G14=-G13*AOVR
+   912        DR=G2*(UNMTH2*CS2F2G-3.*TTHMUN)-G4*SNFG
+   913        DIWC=3.*G3*SINI*CS2F2G-G5*AYNM
+   914        DI=DIWC*COSI
+   915        SINI2=SIN(.5*XINC)
+   916  
+   917  *      UPDATE FOR SHORT PERIOD PERIODICS
+   918  
+   919        SNI2DU=SINIO2*(
+   920       1   G3*(.5*(1.-7.*THETA2)*SN2F2G-3.*UNM5TH*G10)-G5*SINI*CSFG*(2.+
+   921       2         ECOSF))-.5*G5*THETA2*AXNM/COSIO2
+   922        XLAMB=FM+OMGASM+XNODES+G3*(.5*(1.+6.*COSI-7.*THETA2)*SN2F2G-3.*
+   923       1      (UNM5TH+2.*COSI)*G10)+G5*SINI*(COSI*AXNM/(1.+COSI)-(2.
+   924       2      +ECOSF)*CSFG)
+   925        Y4=SINI2*SNFG+CSFG*SNI2DU+.5*SNFG*COSIO2*DI
+   926        Y5=SINI2*CSFG-SNFG*SNI2DU+.5*CSFG*COSIO2*DI
+   927        R=RM+DR
+   928        RDOT=XN*AM*EM*SNF/BETA+G14*(2.*G2*UNMTH2*SN2F2G+G4*CSFG)
+   929        RVDOT=XN*AM**2*BETA/RM+
+   930       1      G14*DR+AM*G13*SINI*DIWC
+   931  
+   932  *      ORIENTATION VECTORS
+   933  
+   934        SNLAMB=SIN(XLAMB)
+   935        CSLAMB=COS(XLAMB)
+   936        TEMP=2.*(Y5*SNLAMB-Y4*CSLAMB)
+   937        UX=Y4*TEMP+CSLAMB
+   938        VX=Y5*TEMP-SNLAMB
+   939        TEMP=2.*(Y5*CSLAMB+Y4*SNLAMB)
+foo.f                     Mon May 24 17:51:19 2004                     page 17
+
+   940        UY=-Y4*TEMP+SNLAMB
+   941        VY=-Y5*TEMP+CSLAMB
+   942        TEMP=2.*SQRT(1.-Y4*Y4-Y5*Y5)
+   943        UZ=Y4*TEMP
+   944        VZ=Y5*TEMP
+   945  
+   946  *      POSITION AND VELOCITY
+   947  
+   948        X=R*UX
+   949        Y=R*UY
+   950        Z=R*UZ
+   951        XDOT=RDOT*UX+RVDOT*VX
+   952        YDOT=RDOT*UY+RVDOT*VY
+   953        ZDOT=RDOT*UZ+RVDOT*VZ
+   954  
+   955        RETURN
+   956        END
+   957  
+   958  *      SGP4                                               3 NOV 80
+   959        SUBROUTINE SGP4(IFLAG,TSINCE)
+   960        COMMON/E1/XMO,XNODEO,OMEGAO,EO,XINCL,XNO,XNDT2O,
+   961       1           XNDD6O,BSTAR,X,Y,Z,XDOT,YDOT,ZDOT,JUNK,EPOCH,DS50
+   962        COMMON/C1/CK2,CK4,E6A,QOMS2T,S,TOTHRD,
+   963       1           XJ3,XKE,XKMPER,XMNPDA,AE
+   964        DOUBLE PRECISION EPOCH, DS50
+   965  
+   966        IF (IFLAG .EQ. 0) GO TO 100
+   967  
+   968  *      RECOVER ORIGINAL MEAN MOTION (XNODP) AND SEMIMAJOR AXIS (AODP)
+   969  *      FROM INPUT ELEMENTS
+   970  
+   971        A1=(XKE/XNO)**TOTHRD
+   972        COSIO=COS(XINCL)
+   973        THETA2=COSIO*COSIO
+   974        X3THM1=3.*THETA2-1.
+   975        EOSQ=EO*EO
+   976        BETAO2=1.-EOSQ
+   977        BETAO=SQRT(BETAO2)
+   978        DEL1=1.5*CK2*X3THM1/(A1*A1*BETAO*BETAO2)
+   979        AO=A1*(1.-DEL1*(.5*TOTHRD+DEL1*(1.+134./81.*DEL1)))
+   980        DELO=1.5*CK2*X3THM1/(AO*AO*BETAO*BETAO2)
+   981        XNODP=XNO/(1.+DELO)
+   982        AODP=AO/(1.-DELO)
+   983  
+   984  *      INITIALIZATION
+   985  
+   986  *      FOR PERIGEE LESS THAN 220 KILOMETERS, THE ISIMP FLAG IS SET AND
+   987  *      THE EQUATIONS ARE TRUNCATED TO LINEAR VARIATION IN SQRT A AND
+   988  *      QUADRATIC VARIATION IN MEAN ANOMALY.  ALSO, THE C3 TERM, THE
+   989  *      DELTA OMEGA TERM, AND THE DELTA M TERM ARE DROPPED.
+   990  
+   991        ISIMP=0
+   992        IF((AODP*(1.-EO)/AE) .LT. (220./XKMPER+AE)) ISIMP=1
+   993  
+   994  *      FOR PERIGEE BELOW 156 KM, THE VALUES OF
+   995  *      S AND QOMS2T ARE ALTERED
+   996  
+   997        S4=S
+   998        QOMS24=QOMS2T
+   999        PERIGE=(AODP*(1.-EO)-AE)*XKMPER
+  1000        IF(PERIGE .GE. 156.) GO TO 10
+  1001        S4=PERIGE-78.
+  1002        IF(PERIGE .GT. 98.) GO TO 9
+  1003        S4=20.
+  1004      9 QOMS24=((120.-S4)*AE/XKMPER)**4
+  1005        S4=S4/XKMPER+AE
+foo.f                     Mon May 24 17:51:19 2004                     page 18
+
+  1006     10 PINVSQ=1./(AODP*AODP*BETAO2*BETAO2)
+  1007        TSI=1./(AODP-S4)
+  1008        ETA=AODP*EO*TSI
+  1009        ETASQ=ETA*ETA
+  1010        EETA=EO*ETA
+  1011        PSISQ=ABS(1.-ETASQ)
+  1012        COEF=QOMS24*TSI**4
+  1013        COEF1=COEF/PSISQ**3.5
+  1014        C2=COEF1*XNODP*(AODP*(1.+1.5*ETASQ+EETA*(4.+ETASQ))+.75*
+  1015       1         CK2*TSI/PSISQ*X3THM1*(8.+3.*ETASQ*(8.+ETASQ)))
+  1016        C1=BSTAR*C2
+  1017        SINIO=SIN(XINCL)
+  1018        A3OVK2=-XJ3/CK2*AE**3
+  1019        C3=COEF*TSI*A3OVK2*XNODP*AE*SINIO/EO
+  1020        X1MTH2=1.-THETA2
+  1021        C4=2.*XNODP*COEF1*AODP*BETAO2*(ETA*
+  1022       1         (2.+.5*ETASQ)+EO*(.5+2.*ETASQ)-2.*CK2*TSI/
+  1023       2         (AODP*PSISQ)*(-3.*X3THM1*(1.-2.*EETA+ETASQ*
+  1024       3         (1.5-.5*EETA))+.75*X1MTH2*(2.*ETASQ-EETA*
+  1025       4         (1.+ETASQ))*COS(2.*OMEGAO)))
+  1026        C5=2.*COEF1*AODP*BETAO2*(1.+2.75*(ETASQ+EETA)+EETA*ETASQ)
+  1027        THETA4=THETA2*THETA2
+  1028        TEMP1=3.*CK2*PINVSQ*XNODP
+  1029        TEMP2=TEMP1*CK2*PINVSQ
+  1030        TEMP3=1.25*CK4*PINVSQ*PINVSQ*XNODP
+  1031        XMDOT=XNODP+.5*TEMP1*BETAO*X3THM1+.0625*TEMP2*BETAO*
+  1032       1         (13.-78.*THETA2+137.*THETA4)
+  1033        X1M5TH=1.-5.*THETA2
+  1034        OMGDOT=-.5*TEMP1*X1M5TH+.0625*TEMP2*(7.-114.*THETA2+
+  1035       1         395.*THETA4)+TEMP3*(3.-36.*THETA2+49.*THETA4)
+  1036        XHDOT1=-TEMP1*COSIO
+  1037        XNODOT=XHDOT1+(.5*TEMP2*(4.-19.*THETA2)+2.*TEMP3*(3.-
+  1038       1         7.*THETA2))*COSIO
+  1039        OMGCOF=BSTAR*C3*COS(OMEGAO)
+  1040        XMCOF=-TOTHRD*COEF*BSTAR*AE/EETA
+  1041        XNODCF=3.5*BETAO2*XHDOT1*C1
+  1042        T2COF=1.5*C1
+  1043        XLCOF=.125*A3OVK2*SINIO*(3.+5.*COSIO)/(1.+COSIO)
+  1044        AYCOF=.25*A3OVK2*SINIO
+  1045        DELMO=(1.+ETA*COS(XMO))**3
+  1046        SINMO=SIN(XMO)
+  1047        X7THM1=7.*THETA2-1.
+  1048        IF(ISIMP .EQ. 1) GO TO 90
+  1049        C1SQ=C1*C1
+  1050        D2=4.*AODP*TSI*C1SQ
+  1051        TEMP=D2*TSI*C1/3.
+  1052        D3=(17.*AODP+S4)*TEMP
+  1053        D4=.5*TEMP*AODP*TSI*(221.*AODP+31.*S4)*C1
+  1054        T3COF=D2+2.*C1SQ
+  1055        T4COF=.25*(3.*D3+C1*(12.*D2+10.*C1SQ))
+  1056        T5COF=.2*(3.*D4+12.*C1*D3+6.*D2*D2+15.*C1SQ*(
+  1057       1         2.*D2+C1SQ))
+  1058     90 IFLAG=0
+  1059  
+  1060  *      UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
+  1061  
+  1062    100 XMDF=XMO+XMDOT*TSINCE
+  1063        OMGADF=OMEGAO+OMGDOT*TSINCE
+  1064        XNODDF=XNODEO+XNODOT*TSINCE
+  1065        OMEGA=OMGADF
+  1066        XMP=XMDF
+  1067        TSQ=TSINCE*TSINCE
+  1068        XNODE=XNODDF+XNODCF*TSQ
+  1069        TEMPA=1.-C1*TSINCE
+  1070        TEMPE=BSTAR*C4*TSINCE
+  1071        TEMPL=T2COF*TSQ
+foo.f                     Mon May 24 17:51:19 2004                     page 19
+
+  1072        IF(ISIMP .EQ. 1) GO TO 110
+  1073        DELOMG=OMGCOF*TSINCE
+  1074        DELM=XMCOF*((1.+ETA*COS(XMDF))**3-DELMO)
+  1075        TEMP=DELOMG+DELM
+  1076        XMP=XMDF+TEMP
+  1077        OMEGA=OMGADF-TEMP
+  1078        TCUBE=TSQ*TSINCE
+  1079        TFOUR=TSINCE*TCUBE
+  1080        TEMPA=TEMPA-D2*TSQ-D3*TCUBE-D4*TFOUR
+  1081        TEMPE=TEMPE+BSTAR*C5*(SIN(XMP)-SINMO)
+  1082        TEMPL=TEMPL+T3COF*TCUBE+
+  1083       1         TFOUR*(T4COF+TSINCE*T5COF)
+  1084    110 A=AODP*TEMPA**2
+  1085        E=EO-TEMPE
+  1086        XL=XMP+OMEGA+XNODE+XNODP*TEMPL
+  1087        BETA=SQRT(1.-E*E)
+  1088        XN=XKE/A**1.5
+  1089  
+  1090  *      LONG PERIOD PERIODICS
+  1091  
+  1092        AXN=E*COS(OMEGA)
+  1093        TEMP=1./(A*BETA*BETA)
+  1094        XLL=TEMP*XLCOF*AXN
+  1095        AYNL=TEMP*AYCOF
+  1096        XLT=XL+XLL
+  1097        AYN=E*SIN(OMEGA)+AYNL
+  1098  
+  1099  *      SOLVE KEPLERS EQUATION
+  1100  
+  1101        CAPU=FMOD2P(XLT-XNODE)
+  1102        TEMP2=CAPU
+  1103        DO 130 I=1,10
+  1104        SINEPW=SIN(TEMP2)
+  1105        COSEPW=COS(TEMP2)
+  1106        TEMP3=AXN*SINEPW
+  1107        TEMP4=AYN*COSEPW
+  1108        TEMP5=AXN*COSEPW
+  1109        TEMP6=AYN*SINEPW
+  1110        EPW=(CAPU-TEMP4+TEMP3-TEMP2)/(1.-TEMP5-TEMP6)+TEMP2
+  1111        IF(ABS(EPW-TEMP2) .LE. E6A) GO TO 140
+  1112    130 TEMP2=EPW
+  1113  
+  1114  *      SHORT PERIOD PRELIMINARY QUANTITIES
+  1115  
+  1116    140 ECOSE=TEMP5+TEMP6
+  1117        ESINE=TEMP3-TEMP4
+  1118        ELSQ=AXN*AXN+AYN*AYN
+  1119        TEMP=1.-ELSQ
+  1120        PL=A*TEMP
+  1121        R=A*(1.-ECOSE)
+  1122        TEMP1=1./R
+  1123        RDOT=XKE*SQRT(A)*ESINE*TEMP1
+  1124        RFDOT=XKE*SQRT(PL)*TEMP1
+  1125        TEMP2=A*TEMP1
+  1126        BETAL=SQRT(TEMP)
+  1127        TEMP3=1./(1.+BETAL)
+  1128        COSU=TEMP2*(COSEPW-AXN+AYN*ESINE*TEMP3)
+  1129        SINU=TEMP2*(SINEPW-AYN-AXN*ESINE*TEMP3)
+  1130        U=ACTAN(SINU,COSU)
+  1131        SIN2U=2.*SINU*COSU
+  1132        COS2U=2.*COSU*COSU-1.
+  1133        TEMP=1./PL
+  1134        TEMP1=CK2*TEMP
+  1135        TEMP2=TEMP1*TEMP
+  1136  
+  1137  *      UPDATE FOR SHORT PERIODICS
+foo.f                     Mon May 24 17:51:19 2004                     page 20
+
+  1138  
+  1139        RK=R*(1.-1.5*TEMP2*BETAL*X3THM1)+.5*TEMP1*X1MTH2*COS2U
+  1140        UK=U-.25*TEMP2*X7THM1*SIN2U
+  1141        XNODEK=XNODE+1.5*TEMP2*COSIO*SIN2U
+  1142        XINCK=XINCL+1.5*TEMP2*COSIO*SINIO*COS2U
+  1143        RDOTK=RDOT-XN*TEMP1*X1MTH2*SIN2U
+  1144        RFDOTK=RFDOT+XN*TEMP1*(X1MTH2*COS2U+1.5*X3THM1)
+  1145  
+  1146  *      ORIENTATION VECTORS
+  1147  
+  1148        SINUK=SIN(UK)
+  1149        COSUK=COS(UK)
+  1150        SINIK=SIN(XINCK)
+  1151        COSIK=COS(XINCK)
+  1152        SINNOK=SIN(XNODEK)
+  1153        COSNOK=COS(XNODEK)
+  1154        XMX=-SINNOK*COSIK
+  1155        XMY=COSNOK*COSIK
+  1156        UX=XMX*SINUK+COSNOK*COSUK
+  1157        UY=XMY*SINUK+SINNOK*COSUK
+  1158        UZ=SINIK*SINUK
+  1159        VX=XMX*COSUK-COSNOK*SINUK
+  1160        VY=XMY*COSUK-SINNOK*SINUK
+  1161        VZ=SINIK*COSUK
+  1162  
+  1163  *      POSITION AND VELOCITY
+  1164  
+  1165        X=RK*UX
+  1166        Y=RK*UY
+  1167        Z=RK*UZ
+  1168        XDOT=RDOTK*UX+RFDOTK*VX
+  1169        YDOT=RDOTK*UY+RFDOTK*VY
+  1170        ZDOT=RDOTK*UZ+RFDOTK*VZ
+  1171  
+  1172        RETURN
+  1173        END
+  1174  
+  1175  *      SGP8                                              14 NOV 80
+  1176        SUBROUTINE SGP8(IFLAG,TSINCE)
+  1177        COMMON/E1/XMO,XNODEO,OMEGAO,EO,XINCL,XNO,XNDT2O,
+  1178       1           XNDD6O,BSTAR,X,Y,Z,XDOT,YDOT,ZDOT,JUNK,EPOCH,DS50
+  1179        COMMON/C1/CK2,CK4,E6A,QOMS2T,S,TOTHRD,
+  1180       1           XJ3,XKE,XKMPER,XMNPDA,AE
+  1181        DOUBLE PRECISION EPOCH, DS50
+  1182        DATA RHO/.15696615/
+  1183  
+  1184        IF (IFLAG .EQ. 0) GO TO 100
+  1185  
+  1186  *      RECOVER ORIGINAL MEAN MOTION (XNODP) AND SEMIMAJOR AXIS (AODP)
+  1187  *      FROM INPUT ELEMENTS --------- CALCULATE BALLISTIC COEFFICIENT
+  1188  *      (B TERM) FROM INPUT B* DRAG TERM
+  1189  
+  1190        A1=(XKE/XNO)**TOTHRD
+  1191        COSI=COS(XINCL)
+  1192        THETA2=COSI*COSI
+  1193        TTHMUN=3.*THETA2-1.
+  1194        EOSQ=EO*EO
+  1195        BETAO2=1.-EOSQ
+  1196        BETAO=SQRT(BETAO2)
+  1197        DEL1=1.5*CK2*TTHMUN/(A1*A1*BETAO*BETAO2)
+  1198        AO=A1*(1.-DEL1*(.5*TOTHRD+DEL1*(1.+134./81.*DEL1)))
+  1199        DELO=1.5*CK2*TTHMUN/(AO*AO*BETAO*BETAO2)
+  1200        AODP=AO/(1.-DELO)
+  1201        XNODP=XNO/(1.+DELO)
+  1202        B=2.*BSTAR/RHO
+  1203  
+foo.f                     Mon May 24 17:51:19 2004                     page 21
+
+  1204  *      INITIALIZATION
+  1205  
+  1206        ISIMP=0
+  1207        PO=AODP*BETAO2
+  1208        POM2=1./(PO*PO)
+  1209        SINI=SIN(XINCL)
+  1210        SING=SIN(OMEGAO)
+  1211        COSG=COS(OMEGAO)
+  1212        TEMP=.5*XINCL
+  1213        SINIO2=SIN(TEMP)
+  1214        COSIO2=COS(TEMP)
+  1215        THETA4=THETA2**2
+  1216        UNM5TH=1.-5.*THETA2
+  1217        UNMTH2=1.-THETA2
+  1218        A3COF=-XJ3/CK2*AE**3
+  1219        PARDT1=3.*CK2*POM2*XNODP
+  1220        PARDT2=PARDT1*CK2*POM2
+  1221        PARDT4=1.25*CK4*POM2*POM2*XNODP
+  1222        XMDT1=.5*PARDT1*BETAO*TTHMUN
+  1223        XGDT1=-.5*PARDT1*UNM5TH
+  1224        XHDT1=-PARDT1*COSI
+  1225        XLLDOT=XNODP+XMDT1+
+  1226       2           .0625*PARDT2*BETAO*(13.-78.*THETA2+137.*THETA4)
+  1227        OMGDT=XGDT1+
+  1228       1      .0625*PARDT2*(7.-114.*THETA2+395.*THETA4)+PARDT4*(3.-36.*
+  1229       2         THETA2+49.*THETA4)
+  1230        XNODOT=XHDT1+
+  1231       1       (.5*PARDT2*(4.-19.*THETA2)+2.*PARDT4*(3.-7.*THETA2))*COSI
+  1232        TSI=1./(PO-S)
+  1233        ETA=EO*S*TSI
+  1234        ETA2=ETA**2
+  1235        PSIM2=ABS(1./(1.-ETA2))
+  1236        ALPHA2=1.+EOSQ
+  1237        EETA=EO*ETA
+  1238        COS2G=2.*COSG**2-1.
+  1239        D5=TSI*PSIM2
+  1240        D1=D5/PO
+  1241        D2=12.+ETA2*(36.+4.5*ETA2)
+  1242        D3=ETA2*(15.+2.5*ETA2)
+  1243        D4=ETA*(5.+3.75*ETA2)
+  1244        B1=CK2*TTHMUN
+  1245        B2=-CK2*UNMTH2
+  1246        B3=A3COF*SINI
+  1247        C0=.5*B*RHO*QOMS2T*XNODP*AODP*TSI**4*PSIM2**3.5/SQRT(ALPHA2)
+  1248        C1=1.5*XNODP*ALPHA2**2*C0
+  1249        C4=D1*D3*B2
+  1250        C5=D5*D4*B3
+  1251        XNDT=C1*(
+  1252       1  (2.+ETA2*(3.+34.*EOSQ)+5.*EETA*(4.+ETA2)+8.5*EOSQ)+
+  1253       1   D1*D2*B1+   C4*COS2G+C5*SING)
+  1254        XNDTN=XNDT/XNODP
+  1255  
+  1256  *      IF DRAG IS VERY SMALL, THE ISIMP FLAG IS SET AND THE
+  1257  *      EQUATIONS ARE TRUNCATED TO LINEAR VARIATION IN MEAN
+  1258  *      MOTION AND QUADRATIC VARIATION IN MEAN ANOMALY
+  1259  
+  1260        IF(ABS(XNDTN*XMNPDA) .LT. 2.16E-3) GO TO 50
+  1261        D6=ETA*(30.+22.5*ETA2)
+  1262        D7=ETA*(5.+12.5*ETA2)
+  1263        D8=1.+ETA2*(6.75+ETA2)
+  1264        C8=D1*D7*B2
+  1265        C9=D5*D8*B3
+  1266        EDOT=-C0*(
+  1267       1   ETA*(4.+ETA2+EOSQ*(15.5+7.*ETA2))+EO*(5.+15.*ETA2)+
+  1268       1   D1*D6*B1 +
+  1269       1   C8*COS2G+C9*SING)
+foo.f                     Mon May 24 17:51:19 2004                     page 22
+
+  1270        D20=.5*TOTHRD*XNDTN
+  1271        ALDTAL=EO*EDOT/ALPHA2
+  1272        TSDTTS=2.*AODP*TSI*(D20*BETAO2+EO*EDOT)
+  1273        ETDT=(EDOT+EO*TSDTTS)*TSI*S
+  1274        PSDTPS=-ETA*ETDT*PSIM2
+  1275        SIN2G=2.*SING*COSG
+  1276        C0DTC0=D20+4.*TSDTTS-ALDTAL-7.*PSDTPS
+  1277        C1DTC1=XNDTN+4.*ALDTAL+C0DTC0
+  1278        D9=ETA*(6.+68.*EOSQ)+EO*(20.+15.*ETA2)
+  1279        D10=5.*ETA*(4.+ETA2)+EO*(17.+68.*ETA2)
+  1280        D11=ETA*(72.+18.*ETA2)
+  1281        D12=ETA*(30.+10.*ETA2)
+  1282        D13=5.+11.25*ETA2
+  1283        D14=TSDTTS-2.*PSDTPS
+  1284        D15=2.*(D20+EO*EDOT/BETAO2)
+  1285        D1DT=D1*(D14+D15)
+  1286        D2DT=ETDT*D11
+  1287        D3DT=ETDT*D12
+  1288        D4DT=ETDT*D13
+  1289        D5DT=D5*D14
+  1290        C4DT=B2*(D1DT*D3+D1*D3DT)
+  1291        C5DT=B3*(D5DT*D4+D5*D4DT)
+  1292        D16=
+  1293       1     D9*ETDT+D10*EDOT +
+  1294       1     B1*(D1DT*D2+D1*D2DT) +
+  1295       1     C4DT*COS2G+C5DT*SING+XGDT1*(C5*COSG-2.*C4*SIN2G)
+  1296        XNDDT=C1DTC1*XNDT+C1*D16
+  1297        EDDOT=C0DTC0*EDOT-C0*(
+  1298       1     (4.+3.*ETA2+30.*EETA+EOSQ*(15.5+21.*ETA2))*ETDT+(5.+15.*ETA2
+  1299       '         +EETA*(31.+14.*ETA2))*EDOT +
+  1300       1     B1*(D1DT*D6+D1*ETDT*(30.+67.5*ETA2))  +
+  1301       1     B2*(D1DT*D7+D1*ETDT*(5.+37.5*ETA2))*COS2G+
+  1302       1     B3*(D5DT*D8+D5*ETDT*ETA*(13.5+4.*ETA2))*SING+XGDT1*(C9*
+  1303       '         COSG-2.*C8*SIN2G))
+  1304        D25=EDOT**2
+  1305        D17=XNDDT/XNODP-XNDTN**2
+  1306        TSDDTS=2.*TSDTTS*(TSDTTS-D20)+AODP*TSI*(TOTHRD*BETAO2*D17-4.*D20*
+  1307       '         EO*EDOT+2.*(D25+EO*EDDOT))
+  1308        ETDDT =(EDDOT+2.*EDOT*TSDTTS)*TSI*S+TSDDTS*ETA
+  1309        D18=TSDDTS-TSDTTS**2
+  1310        D19=-PSDTPS**2/ETA2-ETA*ETDDT*PSIM2-PSDTPS**2
+  1311        D23=ETDT*ETDT
+  1312        D1DDT=D1DT*(D14+D15)+D1*(D18-2.*D19+TOTHRD*D17+2.*(ALPHA2*D25
+  1313       '         /BETAO2+EO*EDDOT)/BETAO2)
+  1314        XNTRDT=XNDT*(2.*TOTHRD*D17+3.*
+  1315       1  (D25+EO*EDDOT)/ALPHA2-6.*ALDTAL**2 +
+  1316       1  4.*D18-7.*D19 )   +
+  1317       1  C1DTC1*XNDDT+C1*(C1DTC1*D16+
+  1318       1  D9*ETDDT+D10*EDDOT+D23*(6.+30.*EETA+68.*EOSQ)+
+  1319       1  ETDT*EDOT*(40.+30.*
+  1320       '  ETA2+272.*EETA)+D25*(17.+68.*ETA2) +
+  1321       1    B1*(D1DDT*D2+2.*D1DT*D2DT+D1*(ETDDT*D11+D23*(72.+54.*ETA2))) 
+        +
+  1322       1    B2*(D1DDT*D3+2.*D1DT*D3DT+D1*(ETDDT*D12+D23*(30.+30.*ETA2))) 
+        *
+  1323       1    COS2G+
+  1324       1      B3*((D5DT*D14+D5*(D18-2.*D19)) *
+  1325       1 D4+2.*D4DT*D5DT+D5*(ETDDT*D13+22.5*ETA*D23)) *SING+XGDT1*
+  1326       1         ((7.*D20+4.*EO*EDOT/BETAO2)*
+  1327       '         (C5*COSG-2.*C4*SIN2G)
+  1328       '         +((2.*C5DT*COSG-4.*C4DT*SIN2G)-XGDT1*(C5*SING+4.*
+  1329       '         C4*COS2G))))
+  1330        TMNDDT=XNDDT*1.E9
+  1331        TEMP=TMNDDT**2-XNDT*1.E18*XNTRDT
+  1332        PP=(TEMP+TMNDDT**2)/TEMP
+  1333        GAMMA=-XNTRDT/(XNDDT*(PP-2.))
+foo.f                     Mon May 24 17:51:19 2004                     page 23
+
+  1334        XND=XNDT/(PP*GAMMA)
+  1335        QQ=1.-EDDOT/(EDOT*GAMMA)
+  1336        ED=EDOT/(QQ*GAMMA)
+  1337        OVGPP=1./(GAMMA*(PP+1.))
+  1338        GO TO 70
+  1339     50 ISIMP=1
+  1340        EDOT=-TOTHRD*XNDTN*(1.-EO)
+  1341     70 IFLAG=0
+  1342  
+  1343  *      UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
+  1344  
+  1345    100 XMAM=FMOD2P(XMO+XLLDOT*TSINCE)
+  1346        OMGASM=OMEGAO+OMGDT*TSINCE
+  1347        XNODES=XNODEO+XNODOT*TSINCE
+  1348        IF(ISIMP .EQ. 1) GO TO 105
+  1349        TEMP=1.-GAMMA*TSINCE
+  1350        TEMP1=TEMP**PP
+  1351        XN=XNODP+XND*(1.-TEMP1)
+  1352        EM=EO+ED*(1.-TEMP**QQ)
+  1353        Z1=XND*(TSINCE+OVGPP*(TEMP*TEMP1-1.))
+  1354        GO TO 108
+  1355    105 XN=XNODP+XNDT*TSINCE
+  1356        EM=EO+EDOT*TSINCE
+  1357        Z1=.5*XNDT*TSINCE*TSINCE
+  1358    108 Z7=3.5*TOTHRD*Z1/XNODP
+  1359        XMAM=FMOD2P(XMAM+Z1+Z7*XMDT1)
+  1360        OMGASM=OMGASM+Z7*XGDT1
+  1361        XNODES=XNODES+Z7*XHDT1
+  1362  
+  1363  *      SOLVE KEPLERS EQUATION
+  1364  
+  1365        ZC2=XMAM+EM*SIN(XMAM)*(1.+EM*COS(XMAM))
+  1366        DO 130 I=1,10
+  1367        SINE=SIN(ZC2)
+  1368        COSE=COS(ZC2)
+  1369        ZC5=1./(1.-EM*COSE)
+  1370        CAPE=(XMAM+EM*SINE-ZC2)*
+  1371       1   ZC5+ZC2
+  1372        IF(ABS(CAPE-ZC2) .LE. E6A) GO TO 140
+  1373    130 ZC2=CAPE
+  1374  
+  1375  *      SHORT PERIOD PRELIMINARY QUANTITIES
+  1376  
+  1377    140 AM=(XKE/XN)**TOTHRD
+  1378        BETA2M=1.-EM*EM
+  1379        SINOS=SIN(OMGASM)
+  1380        COSOS=COS(OMGASM)
+  1381        AXNM=EM*COSOS
+  1382        AYNM=EM*SINOS
+  1383        PM=AM*BETA2M
+  1384        G1=1./PM
+  1385        G2=.5*CK2*G1
+  1386        G3=G2*G1
+  1387        BETA=SQRT(BETA2M)
+  1388        G4=.25*A3COF*SINI
+  1389        G5=.25*A3COF*G1
+  1390        SNF=BETA*SINE*ZC5
+  1391        CSF=(COSE-EM)*ZC5
+  1392        FM=ACTAN(SNF,CSF)
+  1393        SNFG=SNF*COSOS+CSF*SINOS
+  1394        CSFG=CSF*COSOS-SNF*SINOS
+  1395        SN2F2G=2.*SNFG*CSFG
+  1396        CS2F2G=2.*CSFG**2-1.
+  1397        ECOSF=EM*CSF
+  1398        G10=FM-XMAM+EM*SNF
+  1399        RM=PM/(1.+ECOSF)
+foo.f                     Mon May 24 17:51:19 2004                     page 24
+
+  1400        AOVR=AM/RM
+  1401        G13=XN*AOVR
+  1402        G14=-G13*AOVR
+  1403        DR=G2*(UNMTH2*CS2F2G-3.*TTHMUN)-G4*SNFG
+  1404        DIWC=3.*G3*SINI*CS2F2G-G5*AYNM
+  1405        DI=DIWC*COSI
+  1406  
+  1407  *      UPDATE FOR SHORT PERIOD PERIODICS
+  1408  
+  1409        SNI2DU=SINIO2*(
+  1410       1   G3*(.5*(1.-7.*THETA2)*SN2F2G-3.*UNM5TH*G10)-G5*SINI*CSFG*(2.+
+  1411       2         ECOSF))-.5*G5*THETA2*AXNM/COSIO2
+  1412        XLAMB=FM+OMGASM+XNODES+G3*(.5*(1.+6.*COSI-7.*THETA2)*SN2F2G-3.*
+  1413       1      (UNM5TH+2.*COSI)*G10)+G5*SINI*(COSI*AXNM/(1.+COSI)-(2.
+  1414       2      +ECOSF)*CSFG)
+  1415        Y4=SINIO2*SNFG+CSFG*SNI2DU+.5*SNFG*COSIO2*DI
+  1416        Y5=SINIO2*CSFG-SNFG*SNI2DU+.5*CSFG*COSIO2*DI
+  1417        R=RM+DR
+  1418        RDOT=XN*AM*EM*SNF/BETA+G14*(2.*G2*UNMTH2*SN2F2G+G4*CSFG)
+  1419        RVDOT=XN*AM**2*BETA/RM+
+  1420       1      G14*DR+AM*G13*SINI*DIWC
+  1421  
+  1422  *      ORIENTATION VECTORS
+  1423  
+  1424        SNLAMB=SIN(XLAMB)
+  1425        CSLAMB=COS(XLAMB)
+  1426        TEMP=2.*(Y5*SNLAMB-Y4*CSLAMB)
+  1427        UX=Y4*TEMP+CSLAMB
+  1428        VX=Y5*TEMP-SNLAMB
+  1429        TEMP=2.*(Y5*CSLAMB+Y4*SNLAMB)
+  1430        UY=-Y4*TEMP+SNLAMB
+  1431        VY=-Y5*TEMP+CSLAMB
+  1432        TEMP=2.*SQRT(1.-Y4*Y4-Y5*Y5)
+  1433        UZ=Y4*TEMP
+  1434        VZ=Y5*TEMP
+  1435  
+  1436  *      POSITION AND VELOCITY
+  1437  
+  1438        X=R*UX
+  1439        Y=R*UY
+  1440        Z=R*UZ
+  1441        XDOT=RDOT*UX+RVDOT*VX
+  1442        YDOT=RDOT*UY+RVDOT*VY
+  1443        ZDOT=RDOT*UZ+RVDOT*VZ
+  1444  
+  1445        RETURN
+  1446        END
+  1447  
+  1448  *      SGP                                             31 OCT 80
+  1449        SUBROUTINE SGP(IFLAG,TSINCE)
+  1450        COMMON/E1/XMO,XNODEO,OMEGAO,EO,XINCL,XNO,XNDT2O,XNDD6O,BSTAR,
+  1451       1         X,Y,Z,XDOT,YDOT,ZDOT,JUNK,EPOCH,DS50
+  1452        COMMON/C1/CK2,CK4,E6A,QOMS2T,S,TOTHRD,
+  1453       1        XJ3,XKE,XKMPER,XMNPDA,AE
+  1454        DOUBLE PRECISION EPOCH, DS50
+  1455  
+  1456        IF(IFLAG.EQ.0) GO TO 19
+  1457  
+  1458  *      INITIALIZATION
+  1459  
+  1460        C1= CK2*1.5
+  1461        C2= CK2/4.0
+  1462        C3= CK2/2.0
+  1463        C4= XJ3*AE**3/(4.0*CK2)
+  1464        COSIO=COS(XINCL)
+  1465        SINIO=SIN(XINCL)
+foo.f                     Mon May 24 17:51:19 2004                     page 25
+
+  1466        A1=(XKE/XNO)**TOTHRD
+  1467        D1=     C1/A1/A1*(3.*COSIO*COSIO-1.)/(1.-EO*EO)**1.5
+  1468        AO=A1*(1.-1./3.*D1-D1*D1-134./81.*D1*D1*D1)
+  1469        PO=AO*(1.-EO*EO)
+  1470        QO=AO*(1.-EO)
+  1471        XLO=XMO+OMEGAO+XNODEO
+  1472        D1O= C3 *SINIO*SINIO
+  1473        D2O= C2 *(7.*COSIO*COSIO-1.)
+  1474        D3O=C1*COSIO
+  1475        D4O=D3O*SINIO
+  1476        PO2NO=XNO/(PO*PO)
+  1477        OMGDT=C1*PO2NO*(5.*COSIO*COSIO-1.)
+  1478        XNODOT=-2.*D3O*PO2NO
+  1479        C5=.5*C4*SINIO*(3.+5.*COSIO)/(1.+COSIO)
+  1480        C6=C4*SINIO
+  1481        IFLAG=0
+  1482  
+  1483  *      UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
+  1484  
+  1485     19 A=XNO+(2.*XNDT2O+3.*XNDD6O*TSINCE)*TSINCE
+  1486        A=AO*(XNO/A)**TOTHRD
+  1487        E=E6A
+  1488        IF(A.GT.QO) E=1.-QO/A
+  1489        P=A*(1.-E*E)
+  1490        XNODES= XNODEO+XNODOT*TSINCE
+  1491        OMGAS= OMEGAO+OMGDT*TSINCE
+  1492        XLS=FMOD2P(XLO+(XNO+OMGDT+XNODOT+(XNDT2O+XNDD6O*TSINCE)*
+  1493       1 TSINCE)*TSINCE)
+  1494  
+  1495  *      LONG PERIOD PERIODICS
+  1496  
+  1497        AXNSL=E*COS(OMGAS)
+  1498        AYNSL=E*SIN(OMGAS)-C6/P
+  1499        XL=FMOD2P(XLS-C5/P*AXNSL)
+  1500  
+  1501  *      SOLVE KEPLERS EQUATION
+  1502  
+  1503        U=FMOD2P(XL-XNODES)
+  1504        ITEM3=0
+  1505        EO1=U
+  1506        TEM5=1.
+  1507     20 SINEO1=SIN(EO1)
+  1508        COSEO1=COS(EO1)
+  1509        IF(ABS(TEM5).LT.E6A) GO TO 30
+  1510        IF(ITEM3.GE.10) GO TO 30
+  1511        ITEM3=ITEM3+1
+  1512        TEM5=1.-COSEO1*AXNSL-SINEO1*AYNSL
+  1513        TEM5=(U-AYNSL*COSEO1+AXNSL*SINEO1-EO1)/TEM5
+  1514        TEM2=ABS(TEM5)
+  1515        IF(TEM2.GT.1.) TEM5=TEM2/TEM5
+  1516        EO1=EO1+TEM5
+  1517        GO TO 20
+  1518  
+  1519  *      SHORT PERIOD PRELIMINARY QUANTITIES
+  1520  
+  1521     30 ECOSE=AXNSL*COSEO1+AYNSL*SINEO1
+  1522        ESINE=AXNSL*SINEO1-AYNSL*COSEO1
+  1523        EL2=AXNSL*AXNSL+AYNSL*AYNSL
+  1524        PL=A*(1.-EL2)
+  1525        PL2=PL*PL
+  1526        R=A*(1.-ECOSE)
+  1527        RDOT=XKE*SQRT(A)/R*ESINE
+  1528        RVDOT=XKE*SQRT(PL)/R
+  1529        TEMP=ESINE/(1.+SQRT(1.-EL2))
+  1530        SINU=A/R*(SINEO1-AYNSL-AXNSL*TEMP)
+  1531        COSU=A/R*(COSEO1-AXNSL+AYNSL*TEMP)
+foo.f                     Mon May 24 17:51:19 2004                     page 26
+
+  1532        SU=ACTAN(SINU,COSU)
+  1533  
+  1534  *      UPDATE FOR SHORT PERIODICS
+  1535  
+  1536        SIN2U=(COSU+COSU)*SINU
+  1537        COS2U=1.-2.*SINU*SINU
+  1538        RK=R+D1O/PL*COS2U
+  1539        UK=SU-D2O/PL2*SIN2U
+  1540        XNODEK=XNODES+D3O*SIN2U/PL2
+  1541        XINCK =XINCL+D4O/PL2*COS2U
+  1542  
+  1543  *      ORIENTATION VECTORS
+  1544  
+  1545        SINUK=SIN(UK)
+  1546        COSUK=COS(UK)
+  1547        SINNOK=SIN(XNODEK)
+  1548        COSNOK=COS(XNODEK)
+  1549        SINIK=SIN(XINCK)
+  1550        COSIK=COS(XINCK)
+  1551        XMX=-SINNOK*COSIK
+  1552        XMY=COSNOK*COSIK
+  1553        UX=XMX*SINUK+COSNOK*COSUK
+  1554        UY=XMY*SINUK+SINNOK*COSUK
+  1555        UZ=SINIK*SINUK
+  1556        VX=XMX*COSUK-COSNOK*SINUK
+  1557        VY=XMY*COSUK-SINNOK*SINUK
+  1558        VZ=SINIK*COSUK
+  1559  
+  1560  *      POSITION AND VELOCITY
+  1561  
+  1562        X=RK*UX
+  1563        Y=RK*UY
+  1564        Z=RK*UZ
+  1565        XDOT=RDOT*UX
+  1566        YDOT=RDOT*UY
+  1567        ZDOT=RDOT*UZ
+  1568        XDOT=RVDOT*VX+XDOT
+  1569        YDOT=RVDOT*VY+YDOT
+  1570        ZDOT=RVDOT*VZ+ZDOT
+  1571  
+  1572        RETURN
+  1573        END
+  1574  
+  1575        FUNCTION THETAG(EP)
+  1576        COMMON /E1/XMO,XNODEO,OMEGAO,EO,XINCL,XNO,XNDT2O,XNDD6O,BSTAR,
+  1577       1 X,Y,Z,XDOT,YDOT,ZDOT,JUNK,EPOCH,DS50
+  1578        DOUBLE PRECISION EPOCH,D,THETA,TWOPI,YR,TEMP,EP,DS50
+  1579        TWOPI=6.28318530717959D0
+  1580        YR=(EP+2.D-7)*1.D-3
+  1581        JY=YR
+  1582        YR=JY
+  1583        D=EP-YR*1.D3
+  1584        IF(JY.LT.10) JY=JY+80
+  1585        N=(JY-69)/4
+  1586        IF(JY.LT.70) N=(JY-72)/4
+  1587        DS50=7305.D0 + 365.D0*(JY-70) +N + D
+  1588        THETA=1.72944494D0 + 6.3003880987D0*DS50
+  1589        TEMP=THETA/TWOPI
+  1590        I=TEMP
+  1591        TEMP=I
+  1592        THETAG=THETA-TEMP*TWOPI
+  1593        IF(THETAG.LT.0.D0) THETAG=THETAG+TWOPI
+  1594        RETURN
+  1595        END
+Cross Reference                Mon May 24 17:51:19 2004                page 27
+
+
+
+
+
+         C R O S S   R E F E R E N C E   T A B L E
+
+  Source file:   foo.f
+
+
+Legend:
+D        Definition/Declaration
+U        Simple use
+M        Modified occurrence
+A        Actual argument
+C        Subroutine/Function call
+I        Initialization: DATA or extended declaration
+E        Occurrence in EQUIVALENCE
+N        Occurrence in NAMELIST
+
+Cross Reference                Mon May 24 17:51:19 2004                page 28
+
+
+
+
+
+         P R O G R A M   F O R M
+
+ Program
+ -------
+
+MAIN            <MAIN>          D      5:D 
+Cross Reference                Mon May 24 17:51:19 2004                page 29
+
+
+ Functions and Subroutines
+ -------------------------
+
+abs      intrinsic
+                <MAIN>          C     83:C     83:C 
+                <deep>          C    434:C    434:C    441:C    516:C 
+                <sdp4>          C    633:C    709:C 
+                <sdp8>          C    832:C    881:C 
+                <sgp4>          C   1011:C   1111:C 
+                <sgp8>          C   1235:C   1260:C   1372:C 
+                <sgp>           C   1509:C   1514:C 
+
+actan    real*4 <actan>       DUM    106:D    108:M    111:M    115:M    119:M 
+                            121:M    124:M    124:U 
+                <deep>          C    187:C    570:C 
+                <sdp4>          C    728:C 
+                <sdp8>          C    901:C 
+                <sgp4>          C   1130:C 
+                <sgp8>          C   1392:C 
+                <sgp>           C   1532:C 
+
+atan     intrinsic
+                <actan>         C    124:C 
+
+cos      intrinsic
+                <MAIN>          C     51:C 
+                <deep>          C    167:C    189:C    459:C    460:C    461:C 
+                            476:C    477:C    478:C    479:C    480:C    481:C 
+                            482:C    483:C    484:C    485:C    515:C    522:C 
+                            532:C    560:C    572:C 
+                <sdp4>          C    600:C    628:C    646:C    690:C    703:C 
+                            747:C    749:C    751:C 
+                <sdp8>          C    789:C    808:C    811:C    874:C    877:C 
+                            889:C    935:C 
+                <sgp4>          C    972:C   1025:C   1039:C   1045:C   1074:C 
+                           1092:C   1105:C   1149:C   1151:C   1153:C 
+                <sgp8>          C   1191:C   1211:C   1214:C   1365:C   1368:C 
+                           1380:C   1425:C 
+                <sgp>           C   1464:C   1497:C   1508:C   1546:C   1548:C 
+                           1550:C 
+
+dcos     intrinsic
+                <deep>          C    177:C 
+
+deep            <deep>          D    129:D 
+
+dpinit   entry in subroutine deep
+                <deep>          D    157:D 
+                <sdp4>          C    665:C 
+                <sdp8>          C    854:C 
+
+dpper    entry in subroutine deep
+                <deep>          D    513:D 
+                <sdp4>          C    683:C 
+                <sdp8>          C    869:C 
+
+dpsec    entry in subroutine deep
+                <deep>          D    420:D 
+                <sdp4>          C    679:C 
+                <sdp8>          C    865:C 
+
+dsin     intrinsic
+                <deep>          C    176:C 
+
+fmod2p   real*4 <deep>          C    184:C    192:C 
+Cross Reference                Mon May 24 17:51:19 2004                page 30
+
+                <fmod2p>      DUM    577:D    579:M    580:U    581:M    581:U 
+                            582:U    582:M    582:U 
+                <sdp4>          C    699:C 
+                <sdp8>          C    870:C 
+                <sgp4>          C   1101:C 
+                <sgp8>          C   1345:C   1359:C 
+                <sgp>           C   1492:C   1499:C   1503:C 
+
+sdp4            <MAIN>          C     70:C 
+                <sdp4>          D    587:D 
+
+sdp8            <MAIN>          C     74:C 
+                <sdp8>          D    774:D 
+
+sgp             <MAIN>          C     66:C 
+                <sgp>           D   1449:D 
+
+sgp4            <MAIN>          C     68:C 
+                <sgp4>          D    959:D 
+
+sgp8            <MAIN>          C     72:C 
+                <sgp8>          D   1176:D 
+
+sin      intrinsic
+                <deep>          C    166:C    190:C    457:C    457:C    458:C 
+                            466:C    467:C    468:C    469:C    470:C    471:C 
+                            472:C    473:C    474:C    475:C    514:C    519:C 
+                            520:C    529:C    530:C    559:C 
+                <sdp4>          C    627:C    639:C    695:C    702:C    746:C 
+                            748:C    750:C 
+                <sdp8>          C    806:C    807:C    810:C    874:C    876:C 
+                            888:C    915:C    934:C 
+                <sgp4>          C   1017:C   1046:C   1081:C   1097:C   1104:C 
+                           1148:C   1150:C   1152:C 
+                <sgp8>          C   1209:C   1210:C   1213:C   1365:C   1367:C 
+                           1379:C   1424:C 
+                <sgp>           C   1465:C   1498:C   1507:C   1545:C   1547:C 
+                           1549:C 
+
+sqrt     intrinsic
+                <deep>          C    179:C    181:C 
+                <sdp4>          C    605:C    685:C    721:C    722:C    724:C 
+                <sdp8>          C    794:C    844:C    896:C    942:C 
+                <sgp4>          C    977:C   1087:C   1123:C   1124:C   1126:C 
+                <sgp8>          C   1196:C   1247:C   1387:C   1432:C 
+                <sgp>           C   1527:C   1528:C   1529:C 
+
+thetag   real*4 <deep>          C    159:C 
+                <thetag>      DUM   1575:D   1592:M   1593:U   1593:M   1593:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 31
+
+
+ Common Blocks
+ -------------
+
+c1       size:44 
+                <MAIN>          D      8:D 
+                <deep>          D    132:D 
+                <sdp4>          D    590:D 
+                <sdp8>          D    777:D 
+                <sgp4>          D    962:D 
+                <sgp8>          D   1179:D 
+                <sgp>           D   1452:D 
+
+c2       size:20 
+                <MAIN>          D     10:D 
+                <actan>         D    107:D 
+                <deep>          D    134:D 
+                <fmod2p>        D    578:D 
+
+e1       size:80 
+                <MAIN>          D      6:D 
+                <deep>          D    130:D 
+                <sdp4>          D    588:D 
+                <sdp8>          D    775:D 
+                <sgp4>          D    960:D 
+                <sgp8>          D   1177:D 
+                <sgp>           D   1450:D 
+                <thetag>        D   1576:D 
+Cross Reference                Mon May 24 17:51:19 2004                page 32
+
+
+ Variables and Arrays
+ --------------------
+
+a        real*4 <sgp>          UM   1485:M   1486:M   1486:U   1488:U   1488:U 
+                           1489:U   1524:U   1526:U   1527:U   1530:U   1531:U 
+                <sgp4>         UM   1084:M   1088:U   1093:U   1120:U   1121:U 
+                           1123:U   1125:U 
+                <sdp4>         UM    680:M    686:U    691:U    718:U    719:U 
+                            721:U    723:U 
+
+a1       real*4 <MAIN>         UM     50:M     52:U     52:U     53:U 
+                <sgp>          UM   1466:M   1467:U   1467:U   1468:U 
+                <sgp4>         UM    971:M    978:U    978:U    979:U 
+                <sdp4>         UM    599:M    606:U    606:U    607:U 
+                <sgp8>         UM   1190:M   1197:U   1197:U   1198:U 
+                <sdp8>         UM    788:M    795:U    795:U    796:U 
+                <deep>         UM    210:M    221:U    223:U    233:U    233:U 
+                            234:U    236:U    237:U 
+
+a10      real*4 <deep>         UM    215:M    217:U    219:U 
+
+a2       real*4 <deep>         UM    216:M    221:U    223:U    233:U    233:U 
+                            234:U    239:U    240:U 
+
+a3       real*4 <deep>         UM    211:M    222:U    224:U    234:U    235:U 
+                            235:U    237:U    238:U 
+
+a3cof    real*4 <sgp8>         UM   1218:M   1246:U   1388:U   1389:U 
+                <sdp8>         UM    815:M    843:U    897:U    898:U 
+
+a3ovk2   real*4 <sgp4>         UM   1018:M   1019:U   1043:U   1044:U 
+                <sdp4>         UM    640:M    661:U    662:U 
+
+a4       real*4 <deep>         UM    217:M    222:U    224:U    234:U    235:U 
+                            235:U    240:U    241:U 
+
+a5       real*4 <deep>         UM    218:M    225:U    227:U    236:U    237:U 
+                            239:U    240:U 
+
+a6       real*4 <deep>         UM    219:M    226:U    228:U    237:U    238:U 
+                            240:U    241:U 
+
+a7       real*4 <deep>         UM    212:M    216:U    218:U 
+
+a8       real*4 <deep>         UM    213:M    216:U    218:U 
+
+a9       real*4 <deep>         UM    214:M    217:U    219:U 
+
+ae       real*4 in common /c1/ offset:40
+                <MAIN>        DIU      9:D     12:I     21:U     22:U     23:U 
+                             24:U     58:U     75:U     76:U     77:U     78:U 
+                             79:U     80:U 
+                <deep>          D    133:D 
+                <sdp4>         DU    591:D    619:U    624:U    625:U    640:U 
+                <sdp8>         DU    778:D    815:U 
+                <sgp4>         DU    963:D    992:U    992:U    999:U   1004:U 
+                           1005:U   1018:U   1019:U   1040:U 
+                <sgp8>         DU   1180:D   1218:U 
+                <sgp>          DU   1453:D   1463:U 
+
+ainv2    real*4 <deep>         UM    360:M    361:U 
+
+aldtal   real*4 <sgp8>         UM   1271:M   1276:U   1277:U   1315:U 
+
+alfdp    real*4 <deep>        UMA    561:M    565:M    565:U    570:A 
+Cross Reference                Mon May 24 17:51:19 2004                page 33
+
+
+alpha2   real*4 <sgp8>         UM   1236:M   1247:U   1248:U   1271:U   1312:U 
+                           1315:U 
+                <sdp8>         UM    833:M    844:U    845:U 
+
+am       real*4 <sgp8>         UM   1377:M   1383:U   1400:U   1418:U   1419:U 
+                           1420:U 
+                <sdp8>         UM    886:M    892:U    909:U    928:U    929:U 
+                            930:U 
+
+ao       real*4 <MAIN>         UM     53:M     54:U     54:U 
+                <sgp>          UM   1468:M   1469:U   1470:U   1486:U 
+                <sgp4>         UM    979:M    980:U    980:U    982:U 
+                <sdp4>         UM    607:M    608:U    608:U    610:U 
+                <sgp8>         UM   1198:M   1199:U   1199:U   1200:U 
+                <sdp8>         UM    796:M    797:U    797:U    798:U 
+
+ao       real*4 dummy
+                <deep>         DU    157:D    162:U 
+
+aodp     real*4 <sgp4>         UM    982:M    992:U    999:U   1006:U   1006:U 
+                           1007:U   1008:U   1014:U   1021:U   1023:U   1026:U 
+                           1050:U   1052:U   1053:U   1053:U   1084:U 
+                <sdp4>        UMA    610:M    619:U    626:U    626:U    629:U 
+                            630:U    636:U    642:U    644:U    665:A 
+                <sgp8>         UM   1200:M   1207:U   1247:U   1272:U   1306:U 
+                <sdp8>        UMA    798:M    804:U    844:U    854:A 
+
+aovr     real*4 <sgp8>         UM   1400:M   1401:U   1402:U 
+                <sdp8>         UM    909:M    910:U    911:U 
+
+aqnv     real*4 <deep>         UM    162:M    360:U    360:U    365:U    369:U 
+                            373:U    396:U    396:U    398:U    399:U 
+
+atime    real*8 <deep>        DUM    137:D    412:M    431:U    432:U    433:U 
+                            434:U    441:U    444:U    463:U    496:M    496:U 
+                            505:M 
+
+axn      real*4 <sgp4>         UM   1092:M   1094:U   1106:U   1108:U   1118:U 
+                           1118:U   1128:U   1129:U 
+                <sdp4>         UM    690:M    692:U    704:U    706:U    716:U 
+                            716:U    726:U    727:U 
+
+axnm     real*4 <sgp8>         UM   1381:M   1411:U   1413:U 
+                <sdp8>         UM    890:M    921:U    923:U 
+
+axnsl    real*4 <sgp>          UM   1497:M   1499:U   1512:U   1513:U   1521:U 
+                           1522:U   1523:U   1523:U   1530:U   1531:U 
+
+aycof    real*4 <sgp4>         UM   1044:M   1095:U 
+                <sdp4>         UM    662:M    693:U 
+
+ayn      real*4 <sgp4>         UM   1097:M   1107:U   1109:U   1118:U   1118:U 
+                           1128:U   1129:U 
+                <sdp4>         UM    695:M    705:U    707:U    716:U    716:U 
+                            726:U    727:U 
+
+aynl     real*4 <sgp4>         UM   1095:M   1097:U 
+                <sdp4>         UM    693:M    695:U 
+
+aynm     real*4 <sgp8>         UM   1382:M   1404:U 
+                <sdp8>         UM    891:M    913:U 
+
+aynsl    real*4 <sgp>          UM   1498:M   1512:U   1513:U   1521:U   1522:U 
+                           1523:U   1523:U   1530:U   1531:U 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 34
+
+b        real*4 <sgp8>         UM   1202:M   1247:U 
+                <sdp8>         UM    800:M    844:U 
+
+b1       real*4 <sgp8>         UM   1244:M   1253:U   1268:U   1294:U   1300:U 
+                           1321:U 
+                <sdp8>         UM    841:M    850:U 
+
+b2       real*4 <sgp8>         UM   1245:M   1249:U   1264:U   1290:U   1301:U 
+                           1322:U 
+                <sdp8>         UM    842:M    846:U 
+
+b3       real*4 <sgp8>         UM   1246:M   1250:U   1265:U   1291:U   1302:U 
+                           1324:U 
+                <sdp8>         UM    843:M    847:U 
+
+beta     real*4 <sgp4>         UM   1087:M   1093:U   1093:U 
+                <sdp4>         UM    685:M    691:U    691:U 
+                <sgp8>         UM   1387:M   1390:U   1418:U   1419:U 
+                <sdp8>         UM    896:M    899:U    928:U    929:U 
+
+beta2m   real*4 <sgp8>         UM   1378:M   1383:U   1387:U 
+                <sdp8>         UM    887:M    892:U    896:U 
+
+betal    real*4 <sgp4>         UM   1126:M   1127:U   1139:U 
+                <sdp4>         UM    724:M    725:U    737:U 
+
+betao    real*4 <sgp4>         UM    977:M    978:U    980:U   1031:U   1031:U 
+                <sdp4>        UMA    605:M    606:U    608:U    651:U    651:U 
+                            665:A 
+                <sgp8>         UM   1196:M   1197:U   1199:U   1222:U   1226:U 
+                <sdp8>        UMA    794:M    795:U    797:U    819:U    823:U 
+                            854:A 
+
+betao2   real*4 <sgp4>         UM    976:M    977:U    978:U    980:U   1006:U 
+                           1006:U   1021:U   1026:U   1041:U 
+                <sdp4>        UMA    604:M    605:U    606:U    608:U    626:U 
+                            626:U    642:U    659:U    666:A 
+                <sgp8>         UM   1195:M   1196:U   1197:U   1199:U   1207:U 
+                           1272:U   1284:U   1306:U   1313:U   1313:U   1326:U 
+                <sdp8>        UMA    793:M    794:U    795:U    797:U    804:U 
+                            855:A 
+
+betdp    real*4 <deep>        UMA    562:M    566:M    566:U    570:A 
+
+bfact    real*4 <deep>         UM    381:M    382:M    382:U    404:M    405:M 
+                            405:U    406:U 
+
+bsq      real*4 dummy
+                <deep>         DU    158:D    242:U    243:U    244:U 
+
+bstar    real*4 in common /e1/ offset:32
+                <MAIN>        DUM      6:D     32:M     58:M     58:U 
+                <deep>          D    131:D 
+                <sdp4>         DU    589:D    638:U    676:U 
+                <sdp8>         DU    776:D    800:U 
+                <sgp4>         DU    961:D   1016:U   1039:U   1040:U   1070:U 
+                           1081:U 
+                <sgp8>         DU   1178:D   1202:U 
+                <sgp>           D   1450:D 
+                <thetag>        D   1576:D 
+
+c        real*4 <deep>         UM    182:M    184:U 
+
+c0       real*4 <sgp8>         UM   1247:M   1248:U   1266:U   1297:U 
+                <sdp8>         UM    844:M    845:U 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 35
+
+c0dtc0   real*4 <sgp8>         UM   1276:M   1277:U   1297:U 
+
+c1       real*4 <sgp>          UM   1460:M   1467:U   1474:U   1477:U 
+                <sgp4>         UM   1016:M   1041:U   1042:U   1049:U   1049:U 
+                           1051:U   1053:U   1055:U   1056:U   1069:U 
+                <sdp4>         UM    638:M    659:U    660:U    675:U 
+                <sgp8>         UM   1248:M   1251:U   1296:U   1317:U 
+                <sdp8>         UM    845:M    848:U 
+
+c1dtc1   real*4 <sgp8>         UM   1277:M   1296:U   1317:U   1317:U 
+
+c1l      real*4 <deep>         IU    140:I    299:U 
+
+c1sq     real*4 <sgp4>         UM   1049:M   1050:U   1054:U   1055:U   1056:U 
+                           1057:U 
+
+c1ss     real*4 <deep>         IU    138:I    204:U 
+
+c2       real*4 <sgp>          UM   1461:M   1473:U 
+                <sgp4>         UM   1014:M   1016:U 
+                <sdp4>         UM    636:M    638:U 
+
+c3       real*4 <sgp>          UM   1462:M   1472:U 
+                <sgp4>         UM   1019:M   1039:U 
+
+c4       real*4 <sgp>          UM   1463:M   1479:U   1480:U 
+                <sgp4>         UM   1021:M   1070:U 
+                <sdp4>         UM    642:M    676:U 
+                <sgp8>         UM   1249:M   1253:U   1295:U   1327:U   1329:U 
+                <sdp8>         UM    846:M    850:U 
+
+c4dt     real*4 <sgp8>         UM   1290:M   1295:U   1328:U 
+
+c5       real*4 <sgp>          UM   1479:M   1499:U 
+                <sgp4>         UM   1026:M   1081:U 
+                <sgp8>         UM   1250:M   1253:U   1295:U   1327:U   1328:U 
+                <sdp8>         UM    847:M    850:U 
+
+c5dt     real*4 <sgp8>         UM   1291:M   1295:U   1328:U 
+
+c6       real*4 <sgp>          UM   1480:M   1498:U 
+
+c8       real*4 <sgp8>         UM   1264:M   1269:U   1303:U 
+
+c9       real*4 <sgp8>         UM   1265:M   1269:U   1302:U 
+
+cape     real*4 <sgp8>         UM   1370:M   1372:U   1373:U 
+                <sdp8>         UM    879:M    881:U    882:U 
+
+capu     real*4 <sgp4>         UM   1101:M   1102:U   1110:U 
+                <sdp4>         UM    699:M    700:U    708:U 
+
+cc       real*4 <deep>         UM    204:M    245:U    299:M 
+
+ck2      real*4 in common /c1/ offset:0
+                <MAIN>        DUM      8:D     21:M     51:U 
+                <deep>          D    132:D 
+                <sdp4>         DU    590:D    606:U    608:U    637:U    640:U 
+                            643:U    648:U    649:U    732:U 
+                <sdp8>         DU    777:D    795:U    797:U    815:U    816:U 
+                            817:U    841:U    842:U    894:U 
+                <sgp4>         DU    962:D    978:U    980:U   1015:U   1018:U 
+                           1022:U   1028:U   1029:U   1134:U 
+                <sgp8>         DU   1179:D   1197:U   1199:U   1218:U   1219:U 
+                           1220:U   1244:U   1245:U   1385:U 
+                <sgp>          DU   1452:D   1460:U   1461:U   1462:U   1463:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 36
+
+
+ck4      real*4 in common /c1/ offset:4
+                <MAIN>         DM      8:D     22:M 
+                <deep>          D    132:D 
+                <sdp4>         DU    590:D    650:U 
+                <sdp8>         DU    777:D    818:U 
+                <sgp4>         DU    962:D   1030:U 
+                <sgp8>         DU   1179:D   1221:U 
+                <sgp>           D   1452:D 
+
+coef     real*4 <sgp4>         UM   1012:M   1013:U   1019:U   1040:U 
+                <sdp4>         UM    634:M    635:U 
+
+coef1    real*4 <sgp4>         UM   1013:M   1014:U   1021:U   1026:U 
+                <sdp4>         UM    635:M    636:U    642:U 
+
+cos2g    real*4 <sgp8>         UM   1238:M   1253:U   1269:U   1295:U   1301:U 
+                           1323:U   1329:U 
+                <sdp8>         UM    835:M    850:U 
+
+cos2u    real*4 <sgp>          UM   1537:M   1538:U   1541:U 
+                <sgp4>         UM   1132:M   1139:U   1142:U   1144:U 
+                <sdp4>         UM    730:M    737:U    740:U    742:U 
+
+cose     real*4 <sgp8>         UM   1368:M   1369:U   1391:U 
+                <sdp8>         UM    877:M    878:U    900:U 
+
+coseo1   real*4 <sgp>          UM   1508:M   1512:U   1513:U   1521:U   1522:U 
+                           1531:U 
+
+cosepw   real*4 <sgp4>         UM   1105:M   1107:U   1108:U   1128:U 
+                <sdp4>         UM    703:M    705:U    706:U    726:U 
+
+cosg     real*4 <sdp4>         MA    628:M    666:A 
+                <sgp8>         UM   1211:M   1238:U   1275:U   1295:U   1303:U 
+                           1327:U   1328:U 
+                <sdp8>        UMA    808:M    835:U    854:A 
+
+cosi     real*4 <sgp8>         UM   1191:M   1192:U   1192:U   1224:U   1231:U 
+                           1405:U   1412:U   1413:U   1413:U   1413:U 
+                <sdp8>        UMA    789:M    790:U    790:U    821:U    828:U 
+                            854:A    914:U    922:U    923:U    923:U    923:U 
+
+cosik    real*4 <sgp>          UM   1550:M   1551:U   1552:U 
+                <sgp4>         UM   1151:M   1154:U   1155:U 
+                <sdp4>         UM    749:M    752:U    753:U 
+
+cosio    real*4 <sgp>          UM   1464:M   1467:U   1467:U   1473:U   1473:U 
+                           1474:U   1477:U   1477:U   1479:U   1479:U 
+                <sgp4>         UM    972:M    973:U    973:U   1036:U   1038:U 
+                           1043:U   1043:U   1141:U   1142:U 
+                <sdp4>        UMA    600:M    601:U    601:U    656:U    658:U 
+                            661:U    661:U    665:A    739:U    740:U 
+
+cosio2   real*4 <sgp8>         UM   1214:M   1411:U   1415:U   1416:U 
+                <sdp8>         UM    811:M    921:U    925:U    926:U 
+
+cosiq    real*4 dummy
+                <deep>         DU    157:D    216:U    217:U    218:U    219:U 
+                            278:U    307:U    346:U    348:U    349:U    352:U 
+                            353:U    354:U    355:U    356:U    356:U    358:U 
+                            358:U    392:U    392:U    393:U    393:U    394:U 
+                            551:U 
+
+cosis    real*4 <deep>         UM    515:M    563:U    564:U    567:U 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 37
+
+cosnok   real*4 <sgp>          UM   1548:M   1552:U   1553:U   1556:U 
+                <sgp4>         UM   1153:M   1155:U   1156:U   1159:U 
+                <sdp4>         UM    751:M    753:U    754:U    757:U 
+
+cosok    real*4 <deep>         UM    560:M    562:U    563:U    564:U 
+
+cosomo   real*4 dummy
+                <deep>         DU    157:D    221:U    222:U    223:U    224:U 
+                            227:U    228:U 
+
+cosos    real*4 <sgp8>         UM   1380:M   1381:U   1393:U   1394:U 
+                <sdp8>         UM    889:M    890:U    902:U    903:U 
+
+cosq     real*4 <deep>         UM    167:M    202:U    296:U    297:U 
+
+cosq2    real*4 dummy
+                <deep>         DU    157:D    346:U    348:U    349:U    352:U 
+                            353:U    354:U    355:U    356:U    357:U    358:U 
+                            358:U 
+
+cosu     real*4 <sgp>         UMA   1531:M   1532:A   1536:U   1536:U 
+                <sgp4>        UMA   1128:M   1130:A   1131:U   1132:U   1132:U 
+                <sdp4>        UMA    726:M    728:A    729:U    730:U    730:U 
+
+cosuk    real*4 <sgp>          UM   1546:M   1553:U   1554:U   1556:U   1557:U 
+                           1558:U 
+                <sgp4>         UM   1149:M   1156:U   1157:U   1159:U   1160:U 
+                           1161:U 
+                <sdp4>         UM    747:M    754:U    755:U    757:U    758:U 
+                            759:U 
+
+cosx     real*4 dummy
+                <actan>        DU    106:D    109:U    110:U    123:U 
+
+cs2f2g   real*4 <sgp8>         UM   1396:M   1403:U   1404:U 
+                <sdp8>         UM    905:M    912:U    913:U 
+
+csf      real*4 <sgp8>        UMA   1391:M   1392:A   1393:U   1394:U   1397:U 
+                <sdp8>        UMA    900:M    901:A    902:U    903:U    906:U 
+
+csfg     real*4 <sgp8>         UM   1394:M   1395:U   1396:U   1410:U   1414:U 
+                           1415:U   1416:U   1416:U   1418:U 
+                <sdp8>         UM    903:M    904:U    905:U    920:U    924:U 
+                            925:U    926:U    926:U    928:U 
+
+cslamb   real*4 <sgp8>         UM   1425:M   1426:U   1427:U   1429:U   1431:U 
+                <sdp8>         UM    935:M    936:U    937:U    939:U    941:U 
+
+ctem     real*4 <deep>         UM    177:M    178:U    186:U 
+
+d        real*8 <thetag>      DUM   1578:D   1583:M   1587:U 
+
+d1       real*4 <sgp>          UM   1467:M   1468:U   1468:U   1468:U   1468:U 
+                           1468:U   1468:U 
+                <sgp8>         UM   1240:M   1249:U   1253:U   1264:U   1268:U 
+                           1285:U   1290:U   1294:U   1300:U   1301:U   1312:U 
+                           1321:U   1322:U 
+                <sdp8>         UM    837:M    846:U    850:U 
+
+d10      real*4 <sgp8>         UM   1279:M   1293:U   1318:U 
+
+d11      real*4 <sgp8>         UM   1280:M   1286:U   1321:U 
+
+d12      real*4 <sgp8>         UM   1281:M   1287:U   1322:U 
+
+d13      real*4 <sgp8>         UM   1282:M   1288:U   1325:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 38
+
+
+d14      real*4 <sgp8>         UM   1283:M   1285:U   1289:U   1312:U   1324:U 
+
+d15      real*4 <sgp8>         UM   1284:M   1285:U   1312:U 
+
+d16      real*4 <sgp8>         UM   1292:M   1296:U   1317:U 
+
+d17      real*4 <sgp8>         UM   1305:M   1306:U   1312:U   1314:U 
+
+d18      real*4 <sgp8>         UM   1309:M   1312:U   1316:U   1324:U 
+
+d19      real*4 <sgp8>         UM   1310:M   1312:U   1316:U   1324:U 
+
+d1ddt    real*4 <sgp8>         UM   1312:M   1321:U   1322:U 
+
+d1dt     real*4 <sgp8>         UM   1285:M   1290:U   1294:U   1300:U   1301:U 
+                           1312:U   1321:U   1322:U 
+
+d1o      real*4 <sgp>          UM   1472:M   1538:U 
+
+d2       real*4 <sgp4>         UM   1050:M   1051:U   1054:U   1055:U   1056:U 
+                           1056:U   1057:U   1080:U 
+                <sgp8>         UM   1241:M   1253:U   1294:U   1321:U 
+                <sdp8>         UM    838:M    850:U 
+
+d20      real*4 <sgp8>         UM   1270:M   1272:U   1276:U   1284:U   1306:U 
+                           1306:U   1326:U 
+
+d2201    real*4 <deep>         UM    363:M    466:U    476:U 
+
+d2211    real*4 <deep>         UM    364:M    467:U    477:U 
+
+d23      real*4 <sgp8>         UM   1311:M   1318:U   1321:U   1322:U   1325:U 
+
+d25      real*4 <sgp8>         UM   1304:M   1307:U   1312:U   1315:U   1320:U 
+
+d2dt     real*4 <sgp8>         UM   1286:M   1294:U   1321:U 
+
+d2o      real*4 <sgp>          UM   1473:M   1539:U 
+
+d3       real*4 <sgp4>         UM   1052:M   1055:U   1056:U   1080:U 
+                <sgp8>         UM   1242:M   1249:U   1290:U   1322:U 
+                <sdp8>         UM    839:M    846:U 
+
+d3210    real*4 <deep>         UM    367:M    468:U    478:U 
+
+d3222    real*4 <deep>         UM    368:M    469:U    479:U 
+
+d3dt     real*4 <sgp8>         UM   1287:M   1290:U   1322:U 
+
+d3o      real*4 <sgp>          UM   1474:M   1475:U   1478:U   1540:U 
+
+d4       real*4 <sgp4>         UM   1053:M   1056:U   1080:U 
+                <sgp8>         UM   1243:M   1250:U   1291:U   1325:U 
+                <sdp8>         UM    840:M    847:U 
+
+d4410    real*4 <deep>         UM    371:M    470:U    482:U 
+
+d4422    real*4 <deep>         UM    372:M    471:U    483:U 
+
+d4dt     real*4 <sgp8>         UM   1288:M   1291:U   1325:U 
+
+d4o      real*4 <sgp>          UM   1475:M   1541:U 
+
+d5       real*4 <sgp8>         UM   1239:M   1240:U   1250:U   1265:U   1289:U 
+                           1291:U   1302:U   1324:U   1325:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 39
+
+                <sdp8>         UM    836:M    837:U    847:U 
+
+d5220    real*4 <deep>         UM    375:M    472:U    480:U 
+
+d5232    real*4 <deep>         UM    376:M    473:U    481:U 
+
+d5421    real*4 <deep>         UM    378:M    474:U    484:U 
+
+d5433    real*4 <deep>         UM    379:M    475:U    485:U 
+
+d5dt     real*4 <sgp8>         UM   1289:M   1291:U   1302:U   1324:U   1325:U 
+
+d6       real*4 <sgp8>         UM   1261:M   1268:U   1300:U 
+
+d7       real*4 <sgp8>         UM   1262:M   1264:U   1301:U 
+
+d8       real*4 <sgp8>         UM   1263:M   1265:U   1302:U 
+
+d9       real*4 <sgp8>         UM   1278:M   1293:U   1318:U 
+
+dalf     real*4 <deep>         UM    563:M    565:U 
+
+day      real*8 <deep>        DUM    137:D    172:M    173:U    174:U    175:U 
+                            182:U    183:U    191:U 
+
+dbet     real*4 <deep>         UM    564:M    566:U 
+
+de2ra    real*4 in common /c2/ offset:0
+                <MAIN>        DIU     10:D     11:I     38:U     39:U     40:U 
+                             41:U 
+                <actan>         D    107:D 
+                <deep>          D    134:D 
+                <fmod2p>        D    578:D 
+
+del1     real*4 <MAIN>         UM     52:M     53:U     53:U     53:U 
+                <sgp4>         UM    978:M    979:U    979:U    979:U 
+                <sdp4>         UM    606:M    607:U    607:U    607:U 
+                <sgp8>         UM   1197:M   1198:U   1198:U   1198:U 
+                <sdp8>         UM    795:M    796:U    796:U    796:U 
+                <deep>         UM    396:M    397:U    398:U    399:M    399:U 
+                            457:U    459:U 
+
+del2     real*4 <deep>         UM    397:M    457:U    460:U 
+
+del3     real*4 <deep>         UM    398:M    458:U    461:U 
+
+delm     real*4 <sgp4>         UM   1074:M   1075:U 
+
+delmo    real*4 <sgp4>         UM   1045:M   1074:U 
+
+delo     real*4 <MAIN>         UM     54:M     55:U 
+                <sgp4>         UM    980:M    981:U    982:U 
+                <sdp4>         UM    608:M    609:U    610:U 
+                <sgp8>         UM   1199:M   1200:U   1201:U 
+                <sdp8>         UM    797:M    798:U    799:U 
+
+delomg   real*4 <sgp4>         UM   1073:M   1075:U 
+
+delt     real*4 <MAIN>         UM     26:M     82:U 
+
+delt     real*8 <deep>        DUM    137:D    435:M    436:M    439:M    440:M 
+                            494:U    495:U    496:U    502:M    504:M 
+
+di       real*4 <sgp8>         UM   1405:M   1415:U   1416:U 
+                <sdp8>         UM    914:M    925:U    926:U 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 40
+
+diwc     real*4 <sgp8>         UM   1404:M   1405:U   1420:U 
+                <sdp8>         UM    913:M    914:U    930:U 
+
+dls      real*4 <deep>         UM    568:M    569:U 
+
+dr       real*4 <sgp8>         UM   1403:M   1417:U   1420:U 
+                <sdp8>         UM    912:M    927:U    930:U 
+
+ds50     real*8 in common /e1/ offset:72
+                <MAIN>          D      5:D      7:D 
+                <deep>         DU    131:D    135:D    172:U 
+                <sdp4>          D    589:D    592:D 
+                <sdp8>          D    776:D    779:D 
+                <sgp4>          D    961:D    964:D 
+                <sgp8>          D   1178:D   1181:D 
+                <sgp>           D   1451:D   1454:D 
+                <thetag>      DUM   1577:D   1578:D   1587:M   1588:U 
+
+e        real*4 <sgp>          UM   1487:M   1488:M   1489:U   1489:U   1497:U 
+                           1498:U 
+                <sgp4>         UM   1085:M   1087:U   1087:U   1092:U   1097:U 
+                <sdp4>        UMA    681:M    683:A    685:U    685:U    690:U 
+                            695:U 
+
+e3       real*4 <deep>         UM    259:M    284:U    533:U 
+
+e6a      real*4 in common /c1/ offset:8
+                <MAIN>         DI      8:D     11:I 
+                <deep>          D    132:D 
+                <sdp4>         DU    590:D    709:U 
+                <sdp8>         DU    777:D    881:U 
+                <sgp4>         DU    962:D   1111:U 
+                <sgp8>         DU   1179:D   1372:U 
+                <sgp>          DU   1452:D   1487:U   1509:U 
+
+ecose    real*4 <sgp>          UM   1521:M   1526:U 
+                <sgp4>         UM   1116:M   1121:U 
+                <sdp4>         UM    714:M    719:U 
+
+ecosf    real*4 <sgp8>         UM   1397:M   1399:U   1411:U   1414:U 
+                <sdp8>         UM    906:M    908:U    921:U    924:U 
+
+ed       real*4 <sgp8>         UM   1336:M   1352:U 
+
+eddot    real*4 <sgp8>         UM   1297:M   1307:U   1308:U   1313:U   1315:U 
+                           1318:U   1335:U 
+
+edot     real*4 <sgp8>         UM   1266:M   1271:U   1272:U   1273:U   1284:U 
+                           1293:U   1297:U   1299:U   1304:U   1307:U   1308:U 
+                           1319:U   1326:U   1335:U   1336:U   1340:M   1356:U 
+                <sdp8>         UM    852:M    867:U 
+
+ee2      real*4 <deep>         UM    258:M    279:U    533:U 
+
+eeta     real*4 <sgp4>         UM   1010:M   1014:U   1023:U   1024:U   1024:U 
+                           1026:U   1026:U   1040:U 
+                <sdp4>         UM    632:M    636:U    644:U    645:U    645:U 
+                <sgp8>         UM   1237:M   1252:U   1298:U   1299:U   1318:U 
+                           1320:U 
+                <sdp8>         UM    834:M    849:U 
+
+el2      real*4 <sgp>          UM   1523:M   1524:U   1529:U 
+
+elsq     real*4 <sgp4>         UM   1118:M   1119:U 
+                <sdp4>         UM    716:M    717:U 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 41
+
+em       real*4 <sdp4>         UA    679:A    681:U 
+                <sgp8>         UM   1352:M   1356:M   1365:U   1365:U   1369:U 
+                           1370:U   1378:U   1378:U   1381:U   1382:U   1391:U 
+                           1397:U   1398:U   1418:U 
+                <sdp8>        UMA    865:A    867:M    867:U    869:A    874:U 
+                            874:U    878:U    879:U    887:U    887:U    890:U 
+                            891:U    900:U    906:U    907:U    928:U 
+
+em       real*4 dummy
+                <deep>        DUM    420:D    424:M    513:D    544:M    544:U 
+
+eo       real*4 in common /e1/ offset:12
+                <MAIN>        DUM      6:D     33:M     51:U     51:U 
+                <deep>         DU    130:D    160:U    424:U 
+                <sdp4>         DU    588:D    603:U    603:U    619:U    630:U 
+                            632:U    643:U 
+                <sdp8>         DU    775:D    792:U    792:U    830:U    834:U 
+                            852:U 
+                <sgp4>         DU    960:D    975:U    975:U    992:U    999:U 
+                           1008:U   1010:U   1019:U   1022:U   1085:U 
+                <sgp8>         DU   1177:D   1194:U   1194:U   1233:U   1237:U 
+                           1267:U   1271:U   1272:U   1273:U   1278:U   1279:U 
+                           1284:U   1307:U   1307:U   1313:U   1315:U   1326:U 
+                           1340:U   1352:U   1356:U 
+                <sgp>          DU   1450:D   1467:U   1467:U   1469:U   1469:U 
+                           1470:U 
+                <thetag>        D   1576:D 
+
+eo1      real*4 <sgp>          UM   1505:M   1507:U   1508:U   1513:U   1516:M 
+                           1516:U 
+
+eoc      real*4 <deep>         UM    318:M    322:U    323:U    324:U    325:U 
+                            326:U    328:U    329:U    330:U    331:U    332:U 
+                            336:U    338:U    339:U    340:U    342:U    343:U 
+                            344:U 
+
+eosq     real*4 <sgp4>         UM    975:M    976:U 
+                <sdp4>        UMA    603:M    604:U    665:A 
+                <sgp8>         UM   1194:M   1195:U   1236:U   1252:U   1252:U 
+                           1267:U   1278:U   1298:U   1318:U 
+                <sdp8>        UMA    792:M    793:U    833:U    849:U    849:U 
+                            854:A 
+
+ep       real*8 dummy
+                <thetag>       DU   1575:D   1578:D   1580:U   1583:U 
+
+epoch    real*8 in common /e1/ offset:64
+                <MAIN>         DM      5:D      7:D     32:M 
+                <deep>         DA    131:D    135:D    159:A 
+                <sdp4>          D    589:D    592:D 
+                <sdp8>          D    776:D    779:D 
+                <sgp4>          D    961:D    964:D 
+                <sgp8>          D   1178:D   1181:D 
+                <sgp>           D   1451:D   1454:D 
+                <thetag>        D   1577:D   1578:D 
+
+epw      real*4 <sgp4>         UM   1110:M   1111:U   1112:U 
+                <sdp4>         UM    708:M    709:U    710:U 
+
+eq       real*4 <deep>         UM    160:M    248:U    316:U    318:U    319:U 
+                            320:U    321:U    322:U    323:U    324:U    325:U 
+                            326:U    328:U    329:U    330:U    331:U    332:U 
+                            333:U    334:U    336:U    337:U    338:U    339:U 
+                            340:U    342:U    343:U    344:U 
+
+eqsq     real*4 dummy
+Cross Reference                Mon May 24 17:51:19 2004                page 42
+
+                <deep>         DU    157:D    233:U    234:U    235:U    236:U 
+                            237:U    238:U    239:U    240:U    241:U    254:U 
+                            264:U    318:U    321:U    322:U    323:U    324:U 
+                            325:U    326:U    328:U    329:U    330:U    331:U 
+                            332:U    334:U    336:U    338:U    339:U    340:U 
+                            342:U    343:U    344:U    389:U    389:U    390:U 
+                            391:U    391:U 
+
+esine    real*4 <sgp>          UM   1522:M   1527:U   1529:U 
+                <sgp4>         UM   1117:M   1123:U   1128:U   1129:U 
+                <sdp4>         UM    715:M    721:U    726:U    727:U 
+
+eta      real*4 <sgp4>         UM   1008:M   1009:U   1009:U   1010:U   1021:U 
+                           1045:U   1074:U 
+                <sdp4>         UM    630:M    631:U    631:U    632:U    642:U 
+                <sgp8>         UM   1233:M   1234:U   1237:U   1243:U   1261:U 
+                           1262:U   1267:U   1274:U   1278:U   1279:U   1280:U 
+                           1281:U   1302:U   1308:U   1310:U   1325:U 
+                <sdp8>         UM    830:M    831:U    834:U    840:U 
+
+eta2     real*4 <sgp8>         UM   1234:M   1235:U   1241:U   1241:U   1242:U 
+                           1242:U   1243:U   1252:U   1252:U   1261:U   1262:U 
+                           1263:U   1263:U   1267:U   1267:U   1267:U   1278:U 
+                           1279:U   1279:U   1280:U   1281:U   1282:U   1298:U 
+                           1298:U   1298:U   1299:U   1300:U   1301:U   1302:U 
+                           1310:U   1320:U   1320:U   1321:U   1322:U 
+                <sdp8>         UM    831:M    832:U    838:U    838:U    839:U 
+                            839:U    840:U    849:U    849:U 
+
+etasq    real*4 <sgp4>         UM   1009:M   1011:U   1014:U   1014:U   1015:U 
+                           1015:U   1022:U   1022:U   1023:U   1024:U   1025:U 
+                           1026:U   1026:U 
+                <sdp4>         UM    631:M    633:U    636:U    636:U    637:U 
+                            637:U    643:U    643:U    644:U    645:U    646:U 
+
+etddt    real*4 <sgp8>         UM   1308:M   1310:U   1318:U   1321:U   1322:U 
+                           1325:U 
+
+etdt     real*4 <sgp8>         UM   1273:M   1274:U   1286:U   1287:U   1288:U 
+                           1293:U   1298:U   1300:U   1301:U   1302:U   1311:U 
+                           1311:U   1319:U 
+
+f2       real*4 <deep>         UM    521:M    523:U    524:U    525:U    526:U 
+                            527:U    531:M    533:U    534:U    535:U    536:U 
+                            537:U 
+
+f220     real*4 <deep>         UM    346:M    350:U    363:U    392:M    397:U 
+
+f221     real*4 <deep>         UM    347:M    364:U 
+
+f3       real*4 <deep>         UM    522:M    523:U    524:U    525:U    526:U 
+                            527:U    532:M    533:U    534:U    535:U    536:U 
+                            537:U 
+
+f311     real*4 <deep>         UM    393:M    399:U 
+
+f321     real*4 <deep>         UM    348:M    367:U 
+
+f322     real*4 <deep>         UM    349:M    368:U 
+
+f330     real*4 <deep>         UM    394:M    395:M    395:U    395:U    395:U 
+                            398:U 
+
+f441     real*4 <deep>         UM    350:M    371:U 
+
+f442     real*4 <deep>         UM    351:M    372:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 43
+
+
+f522     real*4 <deep>         UM    352:M    375:U 
+
+f523     real*4 <deep>         UM    354:M    376:U 
+
+f542     real*4 <deep>         UM    356:M    378:U 
+
+f543     real*4 <deep>         UM    358:M    379:U 
+
+fasx2    real*4 <deep>         UM    400:M    457:U    459:U 
+
+fasx4    real*4 <deep>         UM    401:M    457:U    460:U 
+
+fasx6    real*4 <deep>         UM    402:M    458:U    461:U 
+
+fm       real*4 <sgp8>         UM   1392:M   1398:U   1412:U 
+                <sdp8>         UM    901:M    907:U    922:U 
+
+ft       real*4 <deep>         UM    444:M    447:U    447:U    447:U    448:U 
+                            448:U    448:U 
+
+g1       real*4 <sgp8>         UM   1384:M   1385:U   1386:U   1389:U 
+                <sdp8>         UM    893:M    894:U    895:U    898:U 
+
+g10      real*4 <sgp8>         UM   1398:M   1410:U   1413:U 
+                <sdp8>         UM    907:M    920:U    923:U 
+
+g13      real*4 <sgp8>         UM   1401:M   1402:U   1420:U 
+                <sdp8>         UM    910:M    911:U    930:U 
+
+g14      real*4 <sgp8>         UM   1402:M   1418:U   1420:U 
+                <sdp8>         UM    911:M    928:U    930:U 
+
+g2       real*4 <sgp8>         UM   1385:M   1386:U   1403:U   1418:U 
+                <sdp8>         UM    894:M    895:U    912:U    928:U 
+
+g200     real*4 <deep>         UM    389:M    397:U 
+
+g201     real*4 <deep>         UM    319:M    363:U 
+
+g211     real*4 <deep>         UM    321:M    328:M    364:U 
+
+g22      real*4 <deep>         IU    147:I    466:U    467:U    476:U    477:U 
+
+g3       real*4 <sgp8>         UM   1386:M   1404:U   1410:U   1412:U 
+                <sdp8>         UM    895:M    913:U    920:U    922:U 
+
+g300     real*4 <deep>         UM    391:M    398:U 
+
+g310     real*4 <deep>         UM    322:M    329:M    367:U    390:M    399:U 
+
+g32      real*4 <deep>         IU    147:I    468:U    469:U    478:U    479:U 
+
+g322     real*4 <deep>         UM    323:M    330:M    368:U 
+
+g4       real*4 <sgp8>         UM   1388:M   1403:U   1418:U 
+                <sdp8>         UM    897:M    912:U    928:U 
+
+g410     real*4 <deep>         UM    324:M    331:M    371:U 
+
+g422     real*4 <deep>         UM    325:M    332:M    372:U 
+
+g44      real*4 <deep>         IU    148:I    470:U    471:U    482:U    483:U 
+
+g5       real*4 <sgp8>         UM   1389:M   1404:U   1410:U   1411:U   1413:U 
+                <sdp8>         UM    898:M    913:U    920:U    921:U    923:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 44
+
+
+g52      real*4 <deep>         IU    148:I    472:U    473:U    480:U    481:U 
+
+g520     real*4 <deep>         UM    326:M    334:M    336:M    375:U 
+
+g521     real*4 <deep>         UM    339:M    343:M    378:U 
+
+g532     real*4 <deep>         UM    340:M    344:M    376:U 
+
+g533     real*4 <deep>         UM    338:M    342:M    379:U 
+
+g54      real*4 <deep>         IU    149:I    474:U    475:U    484:U    485:U 
+
+gam      real*4 <deep>         UM    183:M    184:U    188:U 
+
+gamma    real*4 <sgp8>         UM   1333:M   1334:U   1335:U   1336:U   1337:U 
+                           1349:U 
+
+i        int*4  <sgp4>          M   1103:M 
+                <sdp4>          M    701:M 
+                <sgp8>          M   1366:M 
+                <sdp8>          M    875:M 
+                <thetag>       UM   1590:M   1591:U 
+                <fmod2p>       UM    580:M    581:U 
+
+ibexp    int*4  <MAIN>         UM     32:M     58:U 
+
+ideep    int*4  <MAIN>         UM     28:M     56:M     61:U     63:U 
+
+iept     int*4  <MAIN>         UM     26:M     27:U     35:U     36:U     61:U 
+                             61:U     62:U     63:U     63:U     65:U    102:U 
+
+iexp     int*4  <MAIN>         UM     32:M     37:U 
+
+iflag    int*4  <MAIN>         MA     60:M     66:A     68:A     70:A     72:A 
+                             74:A 
+
+iflag    int*4  dummy
+                <sgp>         DUM   1449:D   1456:U   1481:M 
+                <sgp4>        DUM    959:D    966:U   1058:M 
+                <sdp4>        DUM    587:D    594:U    664:M 
+                <sgp8>        DUM   1176:D   1184:U   1341:M 
+                <sdp8>        DUM    774:D    782:U    853:M 
+
+iresfl   int*4  <deep>         UM    312:M    317:M    387:M    430:U 
+
+iret     int*4  <deep>         UM    437:M    442:M    497:U 
+
+iretn    int*4  <deep>         UM    445:M    488:U    492:M 
+
+iset     int*4  array size: 20 bytes
+                <MAIN>        DIU     16:D     17:I     35:U 
+
+isimp    int*4  <sgp4>         UM    991:M    992:M   1048:U   1072:U 
+                <sgp8>         UM   1206:M   1339:M   1348:U 
+
+isynfl   int*4  <deep>         UM    313:M    388:M    451:U    456:U 
+
+item3    int*4  <sgp>          UM   1504:M   1510:U   1511:M   1511:U 
+
+junk     int*4  in common /e1/ offset:60
+                <MAIN>          D      7:D 
+                <deep>          D    131:D 
+                <sdp4>          D    589:D 
+                <sdp8>          D    776:D 
+                <sgp4>          D    961:D 
+Cross Reference                Mon May 24 17:51:19 2004                page 45
+
+                <sgp8>          D   1178:D 
+                <sgp>           D   1451:D 
+                <thetag>        D   1577:D 
+
+jy       int*4  <thetag>       UM   1581:M   1582:U   1584:U   1584:M   1584:U 
+                           1585:U   1586:U   1586:U   1587:U 
+
+ls       int*4  <deep>         UM    196:M    209:M    270:U    291:M    302:M 
+
+n        int*4  <thetag>       UM   1585:M   1586:M   1587:U 
+
+omega    real*4 <sgp4>         UM   1065:M   1077:M   1086:U   1092:U   1097:U 
+
+omegao   real*4 in common /e1/ offset:8
+                <MAIN>        DUM      6:D     33:M     39:M     39:U 
+                <deep>         DU    130:D    168:U    403:U 
+                <sdp4>         DU    588:D    627:U    628:U    646:U    671:U 
+                <sdp8>         DU    775:D    807:U    808:U    862:U 
+                <sgp4>         DU    960:D   1025:U   1039:U   1063:U 
+                <sgp8>         DU   1177:D   1210:U   1211:U   1346:U 
+                <sgp>          DU   1450:D   1471:U   1491:U 
+                <thetag>        D   1576:D 
+
+omegaq   real*4 <deep>         UM    168:M    463:U 
+
+omgadf   real*4 <sgp4>         UM   1063:M   1065:U   1077:U 
+                <sdp4>        UMA    671:M    679:A    683:A    684:U    690:U 
+                            695:U 
+
+omgas    real*4 <sgp>          UM   1491:M   1497:U   1498:U 
+
+omgasm   real*4 <sgp8>         UM   1346:M   1360:M   1360:U   1379:U   1380:U 
+                           1412:U 
+                <sdp8>        UMA    862:M    865:A    869:A    888:U    889:U 
+                            922:U 
+
+omgasm   real*4 dummy
+                <deep>        DUM    420:D    422:M    422:U    429:M    429:U 
+                            450:U    513:D    552:M    552:U    567:U    572:M 
+
+omgcof   real*4 <sgp4>         UM   1039:M   1073:U 
+
+omgdot   real*4 <sgp4>         UM   1034:M   1063:U 
+                <sdp4>        UMA    654:M    666:A    671:U 
+
+omgdt    real*4 <sgp>          UM   1477:M   1491:U   1492:U 
+                <sgp8>         UM   1227:M   1346:U 
+                <sdp8>        UMA    824:M    855:A    862:U 
+
+omgdt    real*4 dummy
+                <deep>         DU    158:D    165:U    463:U 
+
+ovgpp    real*4 <sgp8>         UM   1337:M   1353:U 
+
+p        real*4 <sgp>          UM   1489:M   1498:U   1499:U 
+
+pardt1   real*4 <sgp8>         UM   1219:M   1220:U   1222:U   1223:U   1224:U 
+                <sdp8>         UM    816:M    817:U    819:U    820:U    821:U 
+
+pardt2   real*4 <sgp8>         UM   1220:M   1226:U   1228:U   1231:U 
+                <sdp8>         UM    817:M    823:U    825:U    828:U 
+
+pardt4   real*4 <sgp8>         UM   1221:M   1228:U   1231:U 
+                <sdp8>         UM    818:M    825:U    828:U 
+
+pe       real*4 <deep>         UM    538:M    544:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 46
+
+
+perige   real*4 <sgp4>         UM    999:M   1000:U   1001:U   1002:U 
+                <sdp4>         UM    619:M    620:U    621:U    622:U 
+
+pgh      real*4 <deep>         UM    541:M    551:M    551:U    552:U    568:U 
+
+ph       real*4 <deep>         UM    542:M    550:M    550:U    551:U    553:U 
+                            563:U    564:U 
+
+pi       real*4 in common /c2/ offset:4
+                <MAIN>         DI     10:D     11:I 
+                <actan>        DU    107:D    111:U 
+                <deep>         DU    134:D    428:U    429:U 
+                <fmod2p>        D    578:D 
+
+pinc     real*4 <deep>         UM    539:M    543:U    563:U    564:U    568:U 
+
+pinvsq   real*4 <sgp4>         UM   1006:M   1028:U   1029:U   1030:U   1030:U 
+                <sdp4>         UM    626:M    648:U    649:U    650:U    650:U 
+
+pio2     real*4 in common /c2/ offset:8
+                <MAIN>         DI     10:D     11:I 
+                <actan>        DU    107:D    121:U 
+                <deep>          D    134:D 
+                <fmod2p>        D    578:D 
+
+pl       real*4 <sgp>          UM   1524:M   1525:U   1525:U   1528:U   1538:U 
+                <sgp4>         UM   1120:M   1124:U   1133:U 
+                <sdp4>         UM    718:M    722:U    731:U 
+                <deep>         UM    540:M    554:U    568:U    571:U 
+
+pl2      real*4 <sgp>          UM   1525:M   1539:U   1540:U   1541:U 
+
+pm       real*4 <sgp8>         UM   1383:M   1384:U   1399:U 
+                <sdp8>         UM    892:M    893:U    908:U 
+
+po       real*4 <sgp>          UM   1469:M   1476:U   1476:U 
+                <sgp8>         UM   1207:M   1208:U   1208:U   1232:U   1240:U 
+                <sdp8>         UM    804:M    805:U    805:U    829:U    837:U 
+
+po2no    real*4 <sgp>          UM   1476:M   1477:U   1478:U 
+
+pom2     real*4 <sgp8>         UM   1208:M   1219:U   1220:U   1221:U   1221:U 
+                <sdp8>         UM    805:M    816:U    817:U    818:U    818:U 
+
+pp       real*4 <sgp8>         UM   1332:M   1333:U   1334:U   1337:U   1350:U 
+
+preep    real*8 <deep>        DUM    137:D    173:U    174:M 
+
+psdtps   real*4 <sgp8>         UM   1274:M   1276:U   1283:U   1310:U   1310:U 
+
+psim2    real*4 <sgp8>         UM   1235:M   1239:U   1247:U   1274:U   1310:U 
+                <sdp8>         UM    832:M    836:U    844:U 
+
+psisq    real*4 <sgp4>         UM   1011:M   1013:U   1015:U   1023:U 
+                <sdp4>         UM    633:M    635:U    637:U    644:U 
+
+q22      real*4 <deep>         IU    146:I    397:U 
+
+q31      real*4 <deep>         IU    146:I    399:U 
+
+q33      real*4 <deep>         IU    146:I    398:U 
+
+qo       real*4 <MAIN>         IU     11:I     23:U 
+                <sgp>          UM   1470:M   1488:U   1488:U 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 47
+
+qoms24   real*4 <sgp4>         UM    998:M   1004:M   1012:U 
+                <sdp4>         UM    618:M    624:M    634:U 
+
+qoms2t   real*4 in common /c1/ offset:12
+                <MAIN>         DM      8:D     23:M 
+                <deep>          D    132:D 
+                <sdp4>         DU    590:D    618:U 
+                <sdp8>         DU    777:D    844:U 
+                <sgp4>         DU    962:D    998:U 
+                <sgp8>         DU   1179:D   1247:U 
+                <sgp>           D   1452:D 
+
+qq       real*4 <sgp8>         UM   1335:M   1336:U   1352:U 
+
+r        real*4 <sgp>          UM   1526:M   1527:U   1528:U   1530:U   1531:U 
+                           1538:U 
+                <sgp4>         UM   1121:M   1122:U   1139:U 
+                <sdp4>         UM    719:M    720:U    737:U 
+                <sgp8>         UM   1417:M   1438:U   1439:U   1440:U 
+                <sdp8>         UM    927:M    948:U    949:U    950:U 
+
+rdot     real*4 <sgp>          UM   1527:M   1565:U   1566:U   1567:U 
+                <sgp4>         UM   1123:M   1143:U 
+                <sdp4>         UM    721:M    741:U 
+                <sgp8>         UM   1418:M   1441:U   1442:U   1443:U 
+                <sdp8>         UM    928:M    951:U    952:U    953:U 
+
+rdotk    real*4 <sgp4>         UM   1143:M   1168:U   1169:U   1170:U 
+                <sdp4>         UM    741:M    766:U    767:U    768:U 
+
+rfdot    real*4 <sgp4>         UM   1124:M   1144:U 
+                <sdp4>         UM    722:M    742:U 
+
+rfdotk   real*4 <sgp4>         UM   1144:M   1168:U   1169:U   1170:U 
+                <sdp4>         UM    742:M    766:U    767:U    768:U 
+
+rho      real*4 <sgp8>         IU   1182:I   1202:U   1247:U 
+                <sdp8>         IU    780:I    800:U    844:U 
+
+rk       real*4 <sgp>          UM   1538:M   1562:U   1563:U   1564:U 
+                <sgp4>         UM   1139:M   1165:U   1166:U   1167:U 
+                <sdp4>         UM    737:M    763:U    764:U    765:U 
+
+rm       real*4 <sgp8>         UM   1399:M   1400:U   1417:U   1419:U 
+                <sdp8>         UM    908:M    909:U    927:U    929:U 
+
+root22   real*4 <deep>         IU    150:I    362:U 
+
+root32   real*4 <deep>         IU    150:I    366:U 
+
+root44   real*4 <deep>         IU    151:I    370:U 
+
+root52   real*4 <deep>         IU    151:I    374:U 
+
+root54   real*4 <deep>         IU    152:I    377:U 
+
+rteqsq   real*4 dummy
+                <deep>         DU    157:D    246:U    247:U 
+
+rvdot    real*4 <sgp>          UM   1528:M   1568:U   1569:U   1570:U 
+                <sgp8>         UM   1419:M   1441:U   1442:U   1443:U 
+                <sdp8>         UM    929:M    951:U    952:U    953:U 
+
+s        real*4 in common /c1/ offset:16
+                <MAIN>         DM      8:D     24:M 
+                <deep>          D    132:D 
+Cross Reference                Mon May 24 17:51:19 2004                page 48
+
+                <sdp4>         DU    590:D    617:U 
+                <sdp8>         DU    777:D    829:U    830:U 
+                <sgp4>         DU    962:D    997:U 
+                <sgp8>         DU   1179:D   1232:U   1233:U   1273:U   1308:U 
+                <sgp>           D   1452:D 
+
+s1       real*4 <deep>         UM    248:M    252:U    258:U    259:U 
+
+s2       real*4 <deep>         UM    246:M    253:U    256:U    260:U    261:U 
+                            268:U    269:U 
+
+s3       real*4 <deep>         UM    245:M    246:U    247:U    254:U    262:U 
+                            263:U    264:U 
+
+s4       real*4 <sgp4>         UM    997:M   1001:M   1003:M   1004:U   1005:M 
+                           1005:U   1007:U   1052:U   1053:U 
+                <sdp4>         UM    617:M    621:M    623:M    624:U    625:M 
+                            625:U    629:U 
+                <deep>         UM    247:M    248:U    255:U    265:U    266:U 
+                            267:U 
+
+s5       real*4 <deep>         UM    249:M    252:U 
+
+s6       real*4 <deep>         UM    250:M    258:U 
+
+s7       real*4 <deep>         UM    251:M    259:U 
+
+savtsn   real*8 <deep>        DUM    137:D    197:M    516:U    517:M 
+
+se       real*4 <deep>         UM    252:M    274:U    304:U 
+
+se2      real*4 <deep>         UM    279:M    523:U 
+
+se3      real*4 <deep>         UM    284:M    523:U 
+
+sel      real*4 <deep>         UM    533:M    538:U 
+
+ses      real*4 <deep>         UM    523:M    538:U 
+
+sgh      real*4 <deep>         UM    255:M    278:U    307:U 
+
+sgh2     real*4 <deep>         UM    282:M    526:U 
+
+sgh3     real*4 <deep>         UM    287:M    526:U 
+
+sgh4     real*4 <deep>         UM    290:M    526:U 
+
+sghl     real*4 <deep>         UM    536:M    541:U 
+
+sghs     real*4 <deep>         UM    526:M    541:U 
+
+sh       real*4 <deep>         UM    256:M    257:M    277:U    307:U    308:U 
+
+sh2      real*4 <deep>         UM    283:M    527:U 
+
+sh3      real*4 <deep>         UM    288:M    527:U 
+
+shl      real*4 <deep>         UM    537:M    542:U 
+
+shs      real*4 <deep>         UM    527:M    542:U 
+
+si       real*4 <deep>         UM    253:M    275:U    305:U 
+
+si2      real*4 <deep>         UM    280:M    524:U 
+
+si3      real*4 <deep>         UM    285:M    524:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 49
+
+
+sil      real*4 <deep>         UM    534:M    539:U 
+
+sin2g    real*4 <sgp8>         UM   1275:M   1295:U   1303:U   1327:U   1328:U 
+
+sin2u    real*4 <sgp>          UM   1536:M   1539:U   1540:U 
+                <sgp4>         UM   1131:M   1140:U   1141:U   1143:U 
+                <sdp4>         UM    729:M    738:U    739:U    741:U 
+
+sine     real*4 <sgp8>         UM   1367:M   1370:U   1390:U 
+                <sdp8>         UM    876:M    879:U    899:U 
+
+sineo1   real*4 <sgp>          UM   1507:M   1512:U   1513:U   1521:U   1522:U 
+                           1530:U 
+
+sinepw   real*4 <sgp4>         UM   1104:M   1106:U   1109:U   1129:U 
+                <sdp4>         UM    702:M    704:U    707:U    727:U 
+
+sing     real*4 <sdp4>         MA    627:M    666:A 
+                <sgp8>         UM   1210:M   1253:U   1269:U   1275:U   1295:U 
+                           1302:U   1325:U   1328:U 
+                <sdp8>        UMA    807:M    850:U    854:A 
+
+sini     real*4 <sgp8>         UM   1209:M   1246:U   1388:U   1404:U   1410:U 
+                           1413:U   1420:U 
+                <sdp8>        UMA    806:M    843:U    854:A    897:U    913:U 
+                            920:U    923:U    930:U 
+
+sini2    real*4 <sdp8>         UM    915:M    925:U    926:U 
+                <deep>         UM    345:M    347:U    350:U    351:U    351:U 
+                            352:U    354:U 
+
+sinik    real*4 <sgp>          UM   1549:M   1555:U   1558:U 
+                <sgp4>         UM   1150:M   1158:U   1161:U 
+                <sdp4>         UM    748:M    756:U    759:U 
+
+sinio    real*4 <sgp>          UM   1465:M   1472:U   1472:U   1475:U   1479:U 
+                           1480:U 
+                <sgp4>         UM   1017:M   1019:U   1043:U   1044:U   1142:U 
+                <sdp4>        UMA    639:M    661:U    662:U    665:A    740:U 
+
+sinio2   real*4 <sgp8>         UM   1213:M   1409:U   1415:U   1416:U 
+                <sdp8>         UM    810:M    919:U 
+
+siniq    real*4 dummy
+                <deep>         DU    157:D    216:U    217:U    218:U    219:U 
+                            277:U    307:U    308:U    345:U    345:U    348:U 
+                            349:U    352:U    354:U    356:U    358:U    393:U 
+                            393:U    550:U 
+
+sinis    real*4 <deep>         UM    514:M    561:U    562:U    568:U 
+
+sinmo    real*4 <sgp4>         UM   1046:M   1081:U 
+
+sinnok   real*4 <sgp>          UM   1547:M   1551:U   1554:U   1557:U 
+                <sgp4>         UM   1152:M   1154:U   1157:U   1160:U 
+                <sdp4>         UM    750:M    752:U    755:U    758:U 
+
+sinok    real*4 <deep>         UM    559:M    561:U    563:U    564:U 
+
+sinomo   real*4 dummy
+                <deep>         DU    157:D    221:U    222:U    223:U    224:U 
+                            225:U    226:U 
+
+sinos    real*4 <sgp8>         UM   1379:M   1382:U   1393:U   1394:U 
+                <sdp8>         UM    888:M    891:U    902:U    903:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 50
+
+
+sinq     real*4 <deep>         UM    166:M    203:U    296:U    297:U 
+
+sinu     real*4 <sgp>         UMA   1530:M   1532:A   1536:U   1537:U   1537:U 
+                <sgp4>        UMA   1129:M   1130:A   1131:U 
+                <sdp4>        UMA    727:M    728:A    729:U 
+
+sinuk    real*4 <sgp>          UM   1545:M   1553:U   1554:U   1555:U   1556:U 
+                           1557:U 
+                <sgp4>         UM   1148:M   1156:U   1157:U   1158:U   1159:U 
+                           1160:U 
+                <sdp4>         UM    746:M    754:U    755:U    756:U    757:U 
+                            758:U 
+
+sinx     real*4 dummy
+                <actan>        DU    106:D    113:U    114:U    117:U    118:U 
+                            123:U 
+
+sinzf    real*4 <deep>         UM    520:M    521:U    521:U    522:U    525:U 
+                            526:U    530:M    531:U    531:U    532:U    535:U 
+                            536:U 
+
+sis      real*4 <deep>         UM    524:M    539:U 
+
+sl       real*4 <deep>         UM    254:M    276:U    306:U 
+
+sl2      real*4 <deep>         UM    281:M    525:U 
+
+sl3      real*4 <deep>         UM    286:M    525:U 
+
+sl4      real*4 <deep>         UM    289:M    525:U 
+
+sll      real*4 <deep>         UM    535:M    540:U 
+
+sls      real*4 <deep>         UM    525:M    540:U 
+
+sn2f2g   real*4 <sgp8>         UM   1395:M   1410:U   1412:U   1418:U 
+                <sdp8>         UM    904:M    920:U    922:U    928:U 
+
+snf      real*4 <sgp8>        UMA   1390:M   1392:A   1393:U   1394:U   1398:U 
+                           1418:U 
+                <sdp8>        UMA    899:M    901:A    902:U    903:U    907:U 
+                            928:U 
+
+snfg     real*4 <sgp8>         UM   1393:M   1395:U   1403:U   1415:U   1415:U 
+                           1416:U 
+                <sdp8>         UM    902:M    904:U    912:U    925:U    925:U 
+                            926:U 
+
+sni2du   real*4 <sgp8>         UM   1409:M   1415:U   1416:U 
+                <sdp8>         UM    919:M    925:U    926:U 
+
+snlamb   real*4 <sgp8>         UM   1424:M   1426:U   1428:U   1429:U   1430:U 
+                <sdp8>         UM    934:M    936:U    938:U    939:U    940:U 
+
+so       real*4 <MAIN>         IU     11:I     23:U     24:U 
+
+sse      real*4 <deep>         UM    274:M    304:M    304:U    424:U 
+
+ssg      real*4 <deep>         UM    278:M    307:M    307:U    405:U    422:U 
+
+ssh      real*4 <deep>         UM    277:M    278:U    308:M    308:U    382:U 
+                            382:U    405:U    423:U 
+
+ssi      real*4 <deep>         UM    275:M    305:M    305:U    425:U 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 51
+
+ssl      real*4 <deep>         UM    276:M    306:M    306:U    382:U    405:U 
+                            421:U 
+
+stem     real*4 <deep>         UM    176:M    180:U    185:U    186:U 
+
+step2    real*8 <deep>        DUM    137:D    415:M    494:U    495:U 
+
+stepn    real*8 <deep>        DUM    137:D    414:M    436:U    439:U    502:U 
+
+stepp    real*8 <deep>        DUM    137:D    413:M    435:U    440:U    441:U 
+                            504:U 
+
+su       real*4 <sgp>          UM   1532:M   1539:U 
+
+t        real*4 dummy
+                <deep>         DU    420:D    421:U    422:U    423:U    424:U 
+                            425:U    432:U    433:U    434:U    436:U    440:U 
+                            441:U    444:U    449:U    501:U    516:U    517:U 
+                            518:U    528:U 
+
+t2cof    real*4 <sgp4>         UM   1042:M   1071:U 
+                <sdp4>         UM    660:M    677:U 
+
+t3cof    real*4 <sgp4>         UM   1054:M   1082:U 
+
+t4cof    real*4 <sgp4>         UM   1055:M   1083:U 
+
+t5cof    real*4 <sgp4>         UM   1056:M   1083:U 
+
+tcube    real*4 <sgp4>         UM   1078:M   1079:U   1080:U   1082:U 
+
+tem2     real*4 <sgp>          UM   1514:M   1515:U   1515:U 
+
+tem5     real*4 <sgp>          UM   1506:M   1509:U   1512:M   1513:M   1513:U 
+                           1514:U   1515:M   1515:U   1516:U 
+
+temp     real*4 <MAIN>         UM     42:M     43:U     44:U     45:U     51:M 
+                             52:U     54:U 
+                <sgp>          UM   1529:M   1530:U   1531:U 
+                <sgp4>         UM   1051:M   1052:U   1053:U   1075:M   1076:U 
+                           1077:U   1093:M   1094:U   1095:U   1119:M   1120:U 
+                           1126:U   1133:M   1134:U   1135:U 
+                <sdp4>         UM    691:M    692:U    693:U    717:M    718:U 
+                            724:U    731:M    732:U    733:U 
+                <sgp8>         UM   1212:M   1213:U   1214:U   1331:M   1332:U 
+                           1332:U   1349:M   1350:U   1352:U   1353:U   1426:M 
+                           1427:U   1428:U   1429:M   1430:U   1431:U   1432:M 
+                           1433:U   1434:U 
+                <sdp8>         UM    809:M    810:U    811:U    936:M    937:U 
+                            938:U    939:M    940:U    941:U    942:M    943:U 
+                            944:U 
+                <actan>        UM    123:M    124:U 
+                <deep>         UM    362:M    363:U    364:U    366:M    367:U 
+                            368:U    370:M    371:U    372:U    374:M    375:U 
+                            376:U    377:M    378:U    379:U    449:M    450:U 
+                            451:U    451:U 
+
+temp     real*8 <thetag>      DUM   1578:D   1589:M   1590:U   1591:M   1592:U 
+
+temp1    real*4 <sgp4>         UM   1028:M   1029:U   1031:U   1034:U   1036:U 
+                           1122:M   1123:U   1124:U   1125:U   1134:M   1135:U 
+                           1139:U   1143:U   1144:U 
+                <sdp4>         UM    648:M    649:U    651:U    654:U    656:U 
+                            720:M    721:U    722:U    723:U    732:M    733:U 
+                            737:U    741:U    742:U 
+                <sgp8>         UM   1350:M   1351:U   1353:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 52
+
+                <deep>         UM    361:M    362:U    365:M    365:U    366:U 
+                            369:M    369:U    370:U    373:M    373:U    374:U 
+                            377:U 
+
+temp2    real*4 <sgp4>         UM   1029:M   1031:U   1034:U   1037:U   1102:M 
+                           1104:U   1105:U   1110:U   1110:U   1111:U   1112:M 
+                           1125:M   1128:U   1129:U   1135:M   1139:U   1140:U 
+                           1141:U   1142:U 
+                <sdp4>         UM    649:M    651:U    654:U    657:U    700:M 
+                            702:U    703:U    708:U    708:U    709:U    710:M 
+                            723:M    726:U    727:U    733:M    737:U    738:U 
+                            739:U    740:U 
+
+temp3    real*4 <sgp4>         UM   1030:M   1035:U   1037:U   1106:M   1110:U 
+                           1117:U   1127:M   1128:U   1129:U 
+                <sdp4>         UM    650:M    655:U    657:U    704:M    708:U 
+                            715:U    725:M    726:U    727:U 
+
+temp4    real*4 <sgp4>         UM   1107:M   1110:U   1117:U 
+                <sdp4>         UM    705:M    708:U    715:U 
+
+temp5    real*4 <sgp4>         UM   1108:M   1110:U   1116:U 
+                <sdp4>         UM    706:M    708:U    714:U 
+
+temp6    real*4 <sgp4>         UM   1109:M   1110:U   1116:U 
+                <sdp4>         UM    707:M    708:U    714:U 
+
+tempa    real*4 <sgp4>         UM   1069:M   1080:M   1080:U   1084:U 
+                <sdp4>         UM    675:M    680:U 
+
+tempe    real*4 <sgp4>         UM   1070:M   1081:M   1081:U   1085:U 
+                <sdp4>         UM    676:M    681:U 
+
+templ    real*4 <sgp4>         UM   1071:M   1082:M   1082:U   1086:U 
+                <sdp4>         UM    677:M    682:U 
+
+tf       real*4 <MAIN>         UM     26:M     83:U 
+
+tfour    real*4 <sgp4>         UM   1079:M   1080:U   1083:U 
+
+thdt     real*4 <deep>         IU    153:I    381:U    381:U    404:U    449:U 
+
+theta    real*8 <thetag>      DUM   1578:D   1588:M   1589:U   1592:U 
+
+theta2   real*4 <sgp4>         UM    973:M    974:U   1020:U   1027:U   1027:U 
+                           1032:U   1033:U   1034:U   1035:U   1037:U   1038:U 
+                           1047:U 
+                <sdp4>        UMA    601:M    602:U    641:U    647:U    647:U 
+                            652:U    653:U    654:U    655:U    657:U    658:U 
+                            663:U    665:A 
+                <sgp8>         UM   1192:M   1193:U   1215:U   1216:U   1217:U 
+                           1226:U   1228:U   1229:U   1231:U   1231:U   1410:U 
+                           1411:U   1412:U 
+                <sdp8>        UMA    790:M    791:U    812:U    813:U    814:U 
+                            823:U    825:U    826:U    828:U    828:U    854:A 
+                            920:U    921:U    922:U 
+
+theta4   real*4 <sgp4>         UM   1027:M   1032:U   1035:U   1035:U 
+                <sdp4>         UM    647:M    652:U    655:U    655:U 
+                <sgp8>         UM   1215:M   1226:U   1228:U   1229:U 
+                <sdp8>         UM    812:M    823:U    825:U    826:U 
+
+thgr     real*4 <deep>         UM    159:M    380:U    380:U    403:U    449:U 
+
+tmnddt   real*4 <sgp8>         UM   1330:M   1331:U   1332:U 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 53
+
+tothrd   real*4 in common /c1/ offset:20
+                <MAIN>        DIU      8:D     11:I     50:U     53:U 
+                <deep>          D    132:D 
+                <sdp4>         DU    590:D    599:U    607:U    680:U 
+                <sdp8>         DU    777:D    788:U    796:U    852:U    860:U 
+                            886:U 
+                <sgp4>         DU    962:D    971:U    979:U   1040:U 
+                <sgp8>         DU   1179:D   1190:U   1198:U   1270:U   1306:U 
+                           1312:U   1314:U   1340:U   1358:U   1377:U 
+                <sgp>          DU   1452:D   1466:U   1486:U 
+
+ts       real*4 <MAIN>         UM     26:M     59:U 
+
+tsddts   real*4 <sgp8>         UM   1306:M   1308:U   1309:U 
+
+tsdtts   real*4 <sgp8>         UM   1272:M   1273:U   1276:U   1283:U   1306:U 
+                           1306:U   1308:U   1309:U 
+
+tsi      real*4 <sgp4>         UM   1007:M   1008:U   1012:U   1015:U   1019:U 
+                           1022:U   1050:U   1051:U   1053:U 
+                <sdp4>         UM    629:M    630:U    634:U    637:U    643:U 
+                <sgp8>         UM   1232:M   1233:U   1239:U   1247:U   1272:U 
+                           1273:U   1306:U   1308:U 
+                <sdp8>         UM    829:M    830:U    836:U    844:U 
+
+tsince   real*4 <MAIN>        UMA     59:M     66:A     68:A     70:A     72:A 
+                             74:A     81:U     82:M     82:U     83:U 
+
+tsince   real*4 dummy
+                <sgp>          DU   1449:D   1485:U   1485:U   1490:U   1491:U 
+                           1492:U   1493:U   1493:U 
+                <sgp4>         DU    959:D   1062:U   1063:U   1064:U   1067:U 
+                           1067:U   1069:U   1070:U   1073:U   1078:U   1079:U 
+                           1083:U 
+                <sdp4>        DUA    587:D    670:U    671:U    672:U    673:U 
+                            673:U    675:U    676:U    679:A 
+                <sgp8>         DU   1176:D   1345:U   1346:U   1347:U   1349:U 
+                           1353:U   1355:U   1356:U   1357:U   1357:U 
+                <sdp8>        DUA    774:D    859:U    859:U    861:U    862:U 
+                            863:U    865:A    866:U    867:U 
+
+tsq      real*4 <sgp4>         UM   1067:M   1068:U   1071:U   1078:U   1080:U 
+                <sdp4>         UM    673:M    674:U    677:U 
+
+tthmun   real*4 <sgp8>         UM   1193:M   1197:U   1199:U   1222:U   1244:U 
+                           1403:U 
+                <sdp8>         UM    791:M    795:U    797:U    819:U    841:U 
+                            912:U 
+
+twopi    real*4 in common /c2/ offset:12
+                <MAIN>        DIU     10:D     11:I     42:U     56:U 
+                <actan>        DU    107:D    115:U 
+                <deep>          D    134:D 
+                <fmod2p>       DU    578:D    580:U    581:U    582:U 
+
+twopi    real*8 <thetag>      DUM   1578:D   1579:M   1589:U   1592:U   1593:U 
+
+u        real*4 <sgp>          UM   1503:M   1505:U   1513:U 
+                <sgp4>         UM   1130:M   1140:U 
+                <sdp4>         UM    728:M    738:U 
+
+uk       real*4 <sgp>          UM   1539:M   1545:U   1546:U 
+                <sgp4>         UM   1140:M   1148:U   1149:U 
+                <sdp4>         UM    738:M    746:U    747:U 
+
+unm5th   real*4 <sgp8>         UM   1216:M   1223:U   1410:U   1413:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 54
+
+                <sdp8>         UM    813:M    820:U    920:U    923:U 
+
+unmth2   real*4 <sgp8>         UM   1217:M   1245:U   1403:U   1418:U 
+                <sdp8>         UM    814:M    842:U    912:U    928:U 
+
+ux       real*4 <sgp>          UM   1553:M   1562:U   1565:U 
+                <sgp4>         UM   1156:M   1165:U   1168:U 
+                <sdp4>         UM    754:M    763:U    766:U 
+                <sgp8>         UM   1427:M   1438:U   1441:U 
+                <sdp8>         UM    937:M    948:U    951:U 
+
+uy       real*4 <sgp>          UM   1554:M   1563:U   1566:U 
+                <sgp4>         UM   1157:M   1166:U   1169:U 
+                <sdp4>         UM    755:M    764:U    767:U 
+                <sgp8>         UM   1430:M   1439:U   1442:U 
+                <sdp8>         UM    940:M    949:U    952:U 
+
+uz       real*4 <sgp>          UM   1555:M   1564:U   1567:U 
+                <sgp4>         UM   1158:M   1167:U   1170:U 
+                <sdp4>         UM    756:M    765:U    768:U 
+                <sgp8>         UM   1433:M   1440:U   1443:U 
+                <sdp8>         UM    943:M    950:U    953:U 
+
+vx       real*4 <sgp>          UM   1556:M   1568:U 
+                <sgp4>         UM   1159:M   1168:U 
+                <sdp4>         UM    757:M    766:U 
+                <sgp8>         UM   1428:M   1441:U 
+                <sdp8>         UM    938:M    951:U 
+
+vy       real*4 <sgp>          UM   1557:M   1569:U 
+                <sgp4>         UM   1160:M   1169:U 
+                <sdp4>         UM    758:M    767:U 
+                <sgp8>         UM   1431:M   1442:U 
+                <sdp8>         UM    941:M    952:U 
+
+vz       real*4 <sgp>          UM   1558:M   1570:U 
+                <sgp4>         UM   1161:M   1170:U 
+                <sdp4>         UM    759:M    768:U 
+                <sgp8>         UM   1434:M   1443:U 
+                <sdp8>         UM    944:M    953:U 
+
+x        real*4 dummy
+                <fmod2p>       DU    577:D    579:U 
+
+x        real*4 in common /e1/ offset:36
+                <MAIN>        DUM      7:D     75:M     75:U     81:U 
+                <deep>          D    131:D 
+                <sdp4>         DM    589:D    763:M 
+                <sdp8>         DM    776:D    948:M 
+                <sgp4>         DM    961:D   1165:M 
+                <sgp8>         DM   1178:D   1438:M 
+                <sgp>          DM   1451:D   1562:M 
+                <thetag>        D   1577:D 
+
+x1       real*4 <deep>         UM    221:M    230:U    230:U    231:U    236:U 
+                            237:U    239:U    240:U    249:U    250:U    251:U 
+
+x1m5th   real*4 <sgp4>         UM   1033:M   1034:U 
+                <sdp4>         UM    653:M    654:U 
+
+x1mth2   real*4 <sgp4>         UM   1020:M   1024:U   1139:U   1143:U   1144:U 
+                <sdp4>         UM    641:M    645:U    737:U    741:U    742:U 
+
+x2       real*4 <deep>         UM    222:M    231:U    232:U    232:U    237:U 
+                            238:U    240:U    241:U    249:U    250:U    251:U 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 55
+
+x2li     real*4 <deep>         UM    465:M    470:U    471:U    474:U    475:U 
+                            482:U    483:U    484:U    485:U 
+
+x2omi    real*4 <deep>         UM    464:M    466:U    470:U    476:U    482:U 
+
+x3       real*4 <deep>         UM    223:M    230:U    230:U    231:U    236:U 
+                            237:U    239:U    240:U    249:U    250:U    251:U 
+
+x3pio2   real*4 in common /c2/ offset:16
+                <MAIN>         DI     10:D     11:I 
+                <actan>        DU    107:D    119:U 
+                <deep>          D    134:D 
+                <fmod2p>        D    578:D 
+
+x3thm1   real*4 <sgp4>         UM    974:M    978:U    980:U   1015:U   1023:U 
+                           1031:U   1139:U   1144:U 
+                <sdp4>         UM    602:M    606:U    608:U    637:U    644:U 
+                            651:U    737:U    742:U 
+
+x4       real*4 <deep>         UM    224:M    231:U    232:U    232:U    237:U 
+                            238:U    240:U    241:U    249:U    250:U    251:U 
+
+x5       real*4 <deep>         UM    225:M    236:U    237:U    239:U    240:U 
+
+x6       real*4 <deep>         UM    226:M    237:U    238:U    240:U    241:U 
+
+x7       real*4 <deep>         UM    227:M    236:U    237:U    239:U    240:U 
+
+x7thm1   real*4 <sgp4>         UM   1047:M   1140:U 
+                <sdp4>         UM    663:M    738:U 
+
+x8       real*4 <deep>         UM    228:M    237:U    238:U    240:U    241:U 
+
+xdot     real*4 in common /e1/ offset:48
+                <MAIN>        DUM      7:D     78:M     78:U     81:U 
+                <deep>          D    131:D 
+                <sdp4>         DM    589:D    766:M 
+                <sdp8>         DM    776:D    951:M 
+                <sgp4>         DM    961:D   1168:M 
+                <sgp8>         DM   1178:D   1441:M 
+                <sgp>         DUM   1451:D   1565:M   1568:M   1568:U 
+                <thetag>        D   1577:D 
+
+xfact    real*4 <deep>         UM    406:M    486:U 
+
+xgdt1    real*4 <sgp8>         UM   1223:M   1227:U   1295:U   1302:U   1325:U 
+                           1328:U   1360:U 
+                <sdp8>         UM    820:M    824:U    862:U 
+
+xgh2     real*4 <deep>         UM    265:M    282:U    536:U 
+
+xgh3     real*4 <deep>         UM    266:M    287:U    536:U 
+
+xgh4     real*4 <deep>         UM    267:M    290:U    536:U 
+
+xh2      real*4 <deep>         UM    268:M    283:U    537:U 
+
+xh3      real*4 <deep>         UM    269:M    288:U    537:U 
+
+xhdot1   real*4 <sgp4>         UM   1036:M   1037:U   1041:U 
+                <sdp4>         UM    656:M    657:U    659:U 
+
+xhdt1    real*4 <sgp8>         UM   1224:M   1230:U   1361:U 
+                <sdp8>         UM    821:M    827:U    863:U 
+
+xi2      real*4 <deep>         UM    260:M    280:U    534:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 56
+
+
+xi3      real*4 <deep>         UM    261:M    285:U    534:U 
+
+xinc     real*4 <sdp4>         UA    679:A    683:A    740:U 
+                <sdp8>         UA    865:A    869:A    915:U 
+
+xinc     real*4 dummy
+                <deep>        DUM    420:D    425:M    426:U    427:M    427:U 
+                            513:D    514:U    515:U    543:M    543:U    572:U 
+
+xinck    real*4 <sgp>          UM   1541:M   1549:U   1550:U 
+                <sgp4>         UM   1142:M   1150:U   1151:U 
+                <sdp4>         UM    740:M    748:U    749:U 
+
+xincl    real*4 in common /e1/ offset:16
+                <MAIN>        DUM      6:D     32:M     41:M     41:U     51:U 
+                <deep>         DU    130:D    163:U    425:U 
+                <sdp4>         DU    588:D    600:U    639:U 
+                <sdp8>         DU    775:D    789:U    806:U    809:U 
+                <sgp4>         DU    960:D    972:U   1017:U   1142:U 
+                <sgp8>         DU   1177:D   1191:U   1209:U   1212:U 
+                <sgp>          DU   1450:D   1464:U   1465:U   1541:U 
+                <thetag>        D   1576:D 
+
+xj2      real*4 <MAIN>         IU     11:I     21:U 
+
+xj3      real*4 in common /c1/ offset:24
+                <MAIN>         DI      9:D     11:I 
+                <deep>          D    133:D 
+                <sdp4>         DU    591:D    640:U 
+                <sdp8>         DU    778:D    815:U 
+                <sgp4>         DU    963:D   1018:U 
+                <sgp8>         DU   1180:D   1218:U 
+                <sgp>          DU   1453:D   1463:U 
+
+xj4      real*4 <MAIN>         IU     12:I     22:U 
+
+xke      real*4 in common /c1/ offset:28
+                <MAIN>        DIU      9:D     12:I     50:U 
+                <deep>          D    133:D 
+                <sdp4>         DU    591:D    599:U    680:U    686:U    721:U 
+                            722:U 
+                <sdp8>         DU    778:D    788:U    886:U 
+                <sgp4>         DU    963:D    971:U   1088:U   1123:U   1124:U 
+                <sgp8>         DU   1180:D   1190:U   1377:U 
+                <sgp>          DU   1453:D   1466:U   1527:U   1528:U 
+
+xkmper   real*4 in common /c1/ offset:32
+                <MAIN>        DIU      9:D     12:I     23:U     24:U     75:U 
+                             76:U     77:U     78:U     79:U     80:U 
+                <deep>          D    133:D 
+                <sdp4>         DU    591:D    619:U    624:U    625:U 
+                <sdp8>          D    778:D 
+                <sgp4>         DU    963:D    992:U    999:U   1004:U   1005:U 
+                <sgp8>          D   1180:D 
+                <sgp>           D   1453:D 
+
+xl       real*4 <sgp>          UM   1499:M   1503:U 
+                <sgp4>         UM   1086:M   1096:U 
+                <sdp4>         UM    684:M    694:U 
+                <deep>         UM    448:M    450:U    451:U 
+
+xl2      real*4 <deep>         UM    262:M    281:U    535:U 
+
+xl3      real*4 <deep>         UM    263:M    286:U    535:U 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 57
+
+xl4      real*4 <deep>         UM    264:M    289:U    535:U 
+
+xlamb    real*4 <sgp8>         UM   1412:M   1424:U   1425:U 
+                <sdp8>         UM    922:M    934:U    935:U 
+
+xlamo    real*4 <deep>         UM    380:M    403:M    410:U    507:U 
+
+xlcof    real*4 <sgp4>         UM   1043:M   1094:U 
+                <sdp4>         UM    661:M    692:U 
+
+xldot    real*4 <deep>         UM    448:U    486:M    487:U    494:U 
+
+xli      real*4 <deep>         UM    410:M    448:U    457:U    457:U    458:U 
+                            459:U    460:U    461:U    465:U    465:U    466:U 
+                            467:U    468:U    469:U    472:U    473:U    476:U 
+                            477:U    478:U    479:U    480:U    481:U    494:M 
+                            494:U    507:M 
+
+xll      real*4 <sgp4>         UM   1094:M   1096:U 
+                <sdp4>         UM    692:M    694:U 
+
+xll      real*4 dummy
+                <deep>        DUM    420:D    421:M    421:U    450:M    451:M 
+                            513:D    554:M    554:U    567:U    571:M    571:U 
+                            572:U 
+
+xlldot   real*4 <sgp8>         UM   1225:M   1345:U 
+                <sdp8>        UMA    822:M    855:A    861:U 
+
+xlldot   real*4 dummy
+                <deep>         DU    158:D    381:U    404:U 
+
+xlo      real*4 <sgp>          UM   1471:M   1492:U 
+
+xls      real*4 <sgp>          UM   1492:M   1499:U 
+                <deep>         UM    567:M    569:M    569:U    572:U 
+
+xlt      real*4 <sgp4>         UM   1096:M   1101:U 
+                <sdp4>         UM    694:M    699:U 
+
+xmam     real*4 <sdp4>        UMA    682:M    683:A    684:U 
+                <sgp8>         UM   1345:M   1359:M   1359:U   1365:U   1365:U 
+                           1365:U   1370:U   1398:U 
+                <sdp8>        UMA    868:M    869:A    870:M    870:A    874:U 
+                            874:U    874:U    879:U    907:U 
+
+xmamdf   real*4 <sdp8>        UMA    861:M    865:A    868:U 
+
+xmao     real*4 <deep>         UM    164:M    380:U    403:U 
+
+xmcof    real*4 <sgp4>         UM   1040:M   1074:U 
+
+xmdf     real*4 <sgp4>         UM   1062:M   1066:U   1074:U   1076:U 
+                <sdp4>        UMA    670:M    679:A    682:U 
+
+xmdot    real*4 <sgp4>         UM   1031:M   1062:U 
+                <sdp4>        UMA    651:M    666:A    670:U 
+
+xmdt1    real*4 <sgp8>         UM   1222:M   1225:U   1359:U 
+                <sdp8>         UM    819:M    822:U    868:U 
+
+xmnpda   real*4 in common /c1/ offset:36
+                <MAIN>        DIU      9:D     12:I     42:U     42:U     43:U 
+                             45:U     56:U     78:U     79:U     80:U 
+                <deep>          D    133:D 
+                <sdp4>          D    591:D 
+Cross Reference                Mon May 24 17:51:19 2004                page 58
+
+                <sdp8>          D    778:D 
+                <sgp4>          D    963:D 
+                <sgp8>         DU   1180:D   1260:U 
+                <sgp>           D   1453:D 
+
+xmo      real*4 in common /e1/ offset:0
+                <MAIN>        DUM      6:D     33:M     40:M     40:U 
+                <deep>         DU    130:D    164:U 
+                <sdp4>         DU    588:D    670:U 
+                <sdp8>         DU    775:D    861:U 
+                <sgp4>         DU    960:D   1045:U   1046:U   1062:U 
+                <sgp8>         DU   1177:D   1345:U 
+                <sgp>          DU   1450:D   1471:U 
+                <thetag>        D   1576:D 
+
+xmp      real*4 <sgp4>         UM   1066:M   1076:M   1081:U   1086:U 
+
+xmx      real*4 <sgp>          UM   1551:M   1553:U   1556:U 
+                <sgp4>         UM   1154:M   1156:U   1159:U 
+                <sdp4>         UM    752:M    754:U    757:U 
+
+xmy      real*4 <sgp>          UM   1552:M   1554:U   1557:U 
+                <sgp4>         UM   1155:M   1157:U   1160:U 
+                <sdp4>         UM    753:M    755:U    758:U 
+
+xn       real*4 <sgp4>         UM   1088:M   1143:U   1144:U 
+                <sdp4>        UMA    678:M    679:A    680:U    686:M    741:U 
+                            742:U 
+                <sgp8>         UM   1351:M   1355:M   1377:U   1401:U   1418:U 
+                           1419:U 
+                <sdp8>        UMA    864:M    865:A    866:M    866:U    886:U 
+                            910:U    928:U    929:U 
+
+xn       real*4 dummy
+                <deep>         DM    420:D    447:M 
+
+xnd      real*4 <sgp8>         UM   1334:M   1351:U   1353:U 
+
+xndd6o   real*4 in common /e1/ offset:28
+                <MAIN>        DUM      6:D     32:M     37:M     37:U     45:M 
+                             45:U 
+                <deep>          D    131:D 
+                <sdp4>          D    589:D 
+                <sdp8>          D    776:D 
+                <sgp4>          D    961:D 
+                <sgp8>          D   1178:D 
+                <sgp>          DU   1450:D   1485:U   1492:U 
+                <thetag>        D   1576:D 
+
+xnddt    real*4 <sgp8>         UM   1296:M   1305:U   1317:U   1330:U   1333:U 
+                <deep>         UM    447:U    459:M    476:M    487:M    487:U 
+                            495:U 
+
+xndot    real*4 <deep>         UM    447:U    448:U    457:M    466:M    494:U 
+                            495:U 
+
+xndt     real*4 <sgp8>         UM   1251:M   1254:U   1296:U   1314:U   1331:U 
+                           1334:U   1355:U   1357:U 
+                <sdp8>         UM    848:M    851:U    859:U    866:U 
+
+xndt2o   real*4 in common /e1/ offset:24
+                <MAIN>        DUM      6:D     32:M     44:M     44:U 
+                <deep>          D    130:D 
+                <sdp4>          D    588:D 
+                <sdp8>          D    775:D 
+                <sgp4>          D    960:D 
+Cross Reference                Mon May 24 17:51:19 2004                page 59
+
+                <sgp8>          D   1177:D 
+                <sgp>          DU   1450:D   1485:U   1492:U 
+                <thetag>        D   1576:D 
+
+xndtn    real*4 <sgp8>         UM   1254:M   1260:U   1270:U   1277:U   1305:U 
+                           1340:U 
+                <sdp8>         UM    851:M    852:U 
+
+xni      real*4 <deep>         UM    411:M    447:U    486:U    495:M    495:U 
+                            506:M 
+
+xno      real*4 in common /e1/ offset:20
+                <MAIN>        DUM      6:D     33:M     34:U     43:M     43:U 
+                             50:U     55:U 
+                <deep>          D    130:D 
+                <sdp4>         DU    588:D    599:U    609:U 
+                <sdp8>         DU    775:D    788:U    799:U 
+                <sgp4>         DU    960:D    971:U    981:U 
+                <sgp8>         DU   1177:D   1190:U   1201:U 
+                <sgp>          DU   1450:D   1466:U   1476:U   1485:U   1486:U 
+                           1492:U 
+                <thetag>        D   1576:D 
+
+xno2     real*4 <deep>         UM    359:M    361:U 
+
+xnodce   real*8 <deep>        DUM    137:D    175:M    176:U    177:U    188:U 
+
+xnodcf   real*4 <sgp4>         UM   1041:M   1068:U 
+                <sdp4>         UM    659:M    674:U 
+
+xnoddf   real*4 <sgp4>         UM   1064:M   1068:U 
+                <sdp4>         UM    672:M    674:U 
+
+xnode    real*4 <sgp4>         UM   1068:M   1086:U   1101:U   1141:U 
+                <sdp4>        UMA    674:M    679:A    683:A    684:U    699:U 
+                            739:U 
+
+xnodek   real*4 <sgp>          UM   1540:M   1547:U   1548:U 
+                <sgp4>         UM   1141:M   1152:U   1153:U 
+                <sdp4>         UM    739:M    750:U    751:U 
+
+xnodeo   real*4 in common /e1/ offset:4
+                <MAIN>        DUM      6:D     33:M     38:M     38:U 
+                <deep>         DU    130:D    166:U    167:U    380:U    380:U 
+                            403:U 
+                <sdp4>         DU    588:D    672:U 
+                <sdp8>         DU    775:D    863:U 
+                <sgp4>         DU    960:D   1064:U 
+                <sgp8>         DU   1177:D   1347:U 
+                <sgp>          DU   1450:D   1471:U   1490:U 
+                <thetag>        D   1576:D 
+
+xnodes   real*4 <sgp>          UM   1490:M   1503:U   1540:U 
+                <sgp8>         UM   1347:M   1361:M   1361:U   1412:U 
+                <sdp8>        UMA    863:M    865:A    869:A    922:U 
+
+xnodes   real*4 dummy
+                <deep>        DUM    420:D    423:M    423:U    428:M    428:U 
+                            449:U    513:D    553:M    553:U    559:U    560:U 
+                            567:U    568:U    570:M    572:U 
+
+xnodot   real*4 <sgp>          UM   1478:M   1490:U   1492:U 
+                <sgp4>         UM   1037:M   1064:U 
+                <sdp4>        UMA    657:M    666:A    672:U 
+                <sgp8>         UM   1230:M   1347:U 
+                <sdp8>        UMA    827:M    855:A    863:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 60
+
+
+xnodot   real*4 dummy
+                <deep>         DU    158:D    165:U    381:U    381:U 
+
+xnodp    real*4 <MAIN>         UM     55:M     56:U 
+                <sgp4>         UM    981:M   1014:U   1019:U   1021:U   1028:U 
+                           1030:U   1031:U   1086:U 
+                <sdp4>        UMA    609:M    636:U    642:U    648:U    650:U 
+                            651:U    666:A    678:U    682:U 
+                <sgp8>         UM   1201:M   1219:U   1221:U   1225:U   1247:U 
+                           1248:U   1254:U   1305:U   1351:U   1355:U   1358:U 
+                <sdp8>        UMA    799:M    816:U    818:U    822:U    844:U 
+                            845:U    851:U    855:A    860:U    864:U 
+
+xnodp    real*4 dummy
+                <deep>         DU    158:D    161:U 
+
+xnoi     real*4 <deep>         UM    208:M    245:U 
+
+xnq      real*4 <deep>         UM    161:M    208:U    314:U    314:U    315:U 
+                            315:U    359:U    359:U    396:U    396:U    406:U 
+                            411:U    506:U 
+
+xntrdt   real*4 <sgp8>         UM   1314:M   1331:U   1333:U 
+
+xomi     real*4 <deep>         UM    463:M    464:U    464:U    468:U    469:U 
+                            472:U    473:U    474:U    475:U    478:U    479:U 
+                            480:U    481:U    484:U    485:U 
+
+xpidot   real*4 <deep>         UM    165:M    404:U 
+
+xqncl    real*4 <deep>         UM    163:M    257:U    545:U 
+
+y        real*4 in common /e1/ offset:40
+                <MAIN>        DUM      7:D     76:M     76:U     81:U 
+                <deep>          D    131:D 
+                <sdp4>         DM    589:D    764:M 
+                <sdp8>         DM    776:D    949:M 
+                <sgp4>         DM    961:D   1166:M 
+                <sgp8>         DM   1178:D   1439:M 
+                <sgp>          DM   1451:D   1563:M 
+                <thetag>        D   1577:D 
+
+y4       real*4 <sgp8>         UM   1415:M   1426:U   1427:U   1429:U   1430:U 
+                           1432:U   1432:U   1433:U 
+                <sdp8>         UM    925:M    936:U    937:U    939:U    940:U 
+                            942:U    942:U    943:U 
+
+y5       real*4 <sgp8>         UM   1416:M   1426:U   1428:U   1429:U   1431:U 
+                           1432:U   1432:U   1434:U 
+                <sdp8>         UM    926:M    936:U    938:U    939:U    941:U 
+                            942:U    942:U    944:U 
+
+ydot     real*4 in common /e1/ offset:52
+                <MAIN>        DUM      7:D     79:M     79:U     81:U 
+                <deep>          D    131:D 
+                <sdp4>         DM    589:D    767:M 
+                <sdp8>         DM    776:D    952:M 
+                <sgp4>         DM    961:D   1169:M 
+                <sgp8>         DM   1178:D   1442:M 
+                <sgp>         DUM   1451:D   1566:M   1569:M   1569:U 
+                <thetag>        D   1577:D 
+
+yr       real*8 <thetag>      DUM   1578:D   1580:M   1581:U   1582:M   1583:U 
+
+z        real*4 in common /e1/ offset:44
+Cross Reference                Mon May 24 17:51:19 2004                page 61
+
+                <MAIN>        DUM      7:D     77:M     77:U     81:U 
+                <deep>          D    131:D 
+                <sdp4>         DM    589:D    765:M 
+                <sdp8>         DM    776:D    950:M 
+                <sgp4>         DM    961:D   1167:M 
+                <sgp8>         DM   1178:D   1440:M 
+                <sgp>          DM   1451:D   1564:M 
+                <thetag>        D   1577:D 
+
+z1       real*4 <sgp8>         UM   1353:M   1357:M   1358:U   1359:U 
+                <sdp8>         UM    859:M    860:U    868:U 
+                <deep>         UM    233:M    242:M    242:U    242:U    254:U 
+                            263:U 
+
+z11      real*4 <deep>         UM    236:M    253:U    261:U 
+
+z12      real*4 <deep>         UM    237:M    260:U 
+
+z13      real*4 <deep>         UM    238:M    253:U    261:U 
+
+z2       real*4 <deep>         UM    234:M    243:M    243:U    243:U    262:U 
+
+z21      real*4 <deep>         UM    239:M    256:U    269:U 
+
+z22      real*4 <deep>         UM    240:M    268:U 
+
+z23      real*4 <deep>         UM    241:M    256:U    269:U 
+
+z3       real*4 <deep>         UM    235:M    244:M    244:U    244:U    254:U 
+                            263:U 
+
+z31      real*4 <deep>         UM    230:M    233:U    242:U    255:U    266:U 
+
+z32      real*4 <deep>         UM    231:M    234:U    243:U    265:U 
+
+z33      real*4 <deep>         UM    232:M    235:U    244:U    255:U    266:U 
+
+z7       real*4 <sgp8>         UM   1358:M   1359:U   1360:U   1361:U 
+                <sdp8>         UM    860:M    862:U    863:U    868:U 
+
+zc2      real*4 <sgp8>         UM   1365:M   1367:U   1368:U   1370:U   1371:U 
+                           1372:U   1373:M 
+                <sdp8>         UM    874:M    876:U    877:U    879:U    880:U 
+                            881:U    882:M 
+
+zc5      real*4 <sgp8>         UM   1369:M   1371:U   1390:U   1391:U 
+                <sdp8>         UM    878:M    880:U    899:U    900:U 
+
+zcosg    real*4 <deep>         UM    198:M    210:U    211:U    212:U    214:U 
+                            215:U    292:M 
+
+zcosgl   real*4 <deep>         UM    189:M    292:U 
+
+zcosgs   real*4 <deep>         IU    144:I    198:U 
+
+zcosh    real*4 <deep>         UM    202:M    210:U    211:U    212:U    214:U 
+                            296:M 
+
+zcoshl   real*4 <deep>         UM    181:M    186:U    296:U    297:U 
+
+zcoshs   real*4 <deep>          I    144:I 
+
+zcosi    real*4 <deep>         UM    200:M    210:U    211:U    212:U    214:U 
+                            294:M 
+
+zcosil   real*4 <deep>         UM    178:M    179:U    179:U    294:U 
+Cross Reference                Mon May 24 17:51:19 2004                page 62
+
+
+zcosis   real*4 <deep>         IU    142:I    200:U 
+
+zdot     real*4 in common /e1/ offset:56
+                <MAIN>        DUM      7:D     80:M     80:U     81:U 
+                <deep>          D    131:D 
+                <sdp4>         DM    589:D    768:M 
+                <sdp8>         DM    776:D    953:M 
+                <sgp4>         DM    961:D   1170:M 
+                <sgp8>         DM   1178:D   1443:M 
+                <sgp>         DUM   1451:D   1567:M   1570:M   1570:U 
+                <thetag>        D   1577:D 
+
+ze       real*4 <deep>         UM    206:M    264:U    267:U    300:M 
+
+zel      real*4 <deep>         IU    140:I    300:U    529:U 
+
+zes      real*4 <deep>         IU    138:I    206:U    519:U 
+
+zf       real*4 <deep>         UM    519:M    520:U    522:U    529:M    530:U 
+                            532:U 
+
+zm       real*4 <deep>         UM    518:M    519:U    519:U    528:M    529:U 
+                            529:U 
+
+zmo      real*4 <deep>          M    207:M    301:M 
+
+zmol     real*4 <deep>         UM    184:M    301:U    528:U 
+
+zmos     real*4 <deep>        UMA    191:M    192:M    192:A    207:U    518:U 
+
+zn       real*4 <deep>         UM    205:M    252:U    253:U    254:U    255:U 
+                            256:U    298:M 
+
+znl      real*4 <deep>         IU    140:I    298:U    528:U 
+
+zns      real*4 <deep>         IU    138:I    205:U    518:U 
+
+zsing    real*4 <deep>         UM    199:M    210:U    211:U    212:U    213:U 
+                            214:U    293:M 
+
+zsingl   real*4 <deep>         UM    190:M    293:U 
+
+zsings   real*4 <deep>         IU    142:I    199:U 
+
+zsinh    real*4 <deep>         UM    203:M    210:U    211:U    212:U    214:U 
+                            297:M 
+
+zsinhl   real*4 <deep>         UM    180:M    181:U    181:U    186:U    296:U 
+                            297:U 
+
+zsinhs   real*4 <deep>          I    144:I 
+
+zsini    real*4 <deep>         UM    201:M    213:U    215:U    295:M 
+
+zsinil   real*4 <deep>         UM    179:M    180:U    185:U    295:U 
+
+zsinis   real*4 <deep>         IU    142:I    201:U 
+
+zx       real*4 <deep>        UMA    185:M    187:M    187:A    188:M    188:U 
+                            189:U    190:U 
+
+zy       real*4 <deep>         MA    186:M    187:A 
+Cross Reference                Mon May 24 17:51:19 2004                page 63
+
+
+ Format and Executable Labels
+ ----------------------------
+
+1               <actan>        DU    110:U    113:D 
+
+2               <MAIN>         DU     25:D     83:U    103:U 
+
+5               <actan>        DU    109:U    117:D 
+                <deep>          D    172:D 
+
+6               <actan>        DU    118:U    121:D 
+
+7               <MAIN>          D     34:D 
+                <actan>        DU    112:U    114:U    116:U    123:D 
+
+8               <actan>        DU    113:U    117:U    120:U    122:U    125:D 
+
+9               <MAIN>         DU     63:D     99:U 
+                <sgp4>         DU   1002:U   1004:D 
+                <sdp4>         DU    622:U    624:D 
+
+10              <MAIN>         DU     65:D     84:U    101:U 
+                <sgp4>         DU   1000:U   1006:D 
+                <sdp4>         DU    620:U    626:D 
+                <deep>         DU    173:U    196:D 
+
+19              <sgp>          DU   1456:U   1485:D 
+
+20              <sgp>          DU   1507:D   1517:U 
+                <deep>         DU    210:D    303:U 
+
+21              <MAIN>         DU     65:U     66:D 
+
+22              <MAIN>         DU     65:U     68:D 
+
+23              <MAIN>         DU     65:U     70:D 
+
+24              <MAIN>         DU     65:U     72:D 
+
+25              <MAIN>         DU     65:U     74:D 
+
+30              <sgp>          DU   1509:U   1510:U   1521:D 
+                <deep>         DU    209:U    274:D 
+
+40              <deep>         DU    302:U    304:D 
+
+45              <deep>         DU    320:U    328:D 
+
+50              <sgp8>         DU   1260:U   1339:D 
+                <deep>         DU    333:U    336:D 
+
+55              <deep>         DU    327:U    335:U    337:D 
+
+60              <MAIN>         DU     67:U     69:U     71:U     73:U     75:D 
+                <deep>         DU    337:U    342:D 
+
+65              <deep>         DU    341:U    345:D 
+
+70              <sgp8>         DU   1338:U   1341:D 
+                <deep>         DU    314:U    387:D 
+
+80              <deep>         DU    383:U    406:D 
+
+90              <sgp4>         DU   1048:U   1058:D 
+                <sdp4>          D    664:D 
+Cross Reference                Mon May 24 17:51:19 2004                page 64
+
+                <deep>         DU    426:U    430:D 
+
+100             <sgp4>         DU    966:U   1062:D 
+                <sdp4>         DU    594:U    670:D 
+                <sgp8>         DU   1184:U   1345:D 
+                <sdp8>         DU    782:U    859:D 
+                <deep>         DU    431:D    437:U 
+
+105             <sgp8>         DU   1348:U   1355:D 
+                <deep>          D    434:D 
+
+108             <sgp8>         DU   1354:U   1358:D 
+
+110             <sgp4>         DU   1072:U   1084:D 
+                <deep>          D    437:D 
+
+120             <deep>         DU    434:U    439:D 
+
+125             <deep>         DU    441:D    442:U    508:U 
+
+130             <sgp4>         DU   1103:U   1112:D 
+                <sdp4>         DU    701:U    710:D 
+                <sgp8>         DU   1366:U   1373:D 
+                <sdp8>         DU    875:U    882:D 
+                <deep>         DU    441:U    444:D 
+
+140             <sgp4>         DU   1111:U   1116:D 
+                <sdp4>         DU    709:U    714:D 
+                <sgp8>         DU   1372:U   1377:D 
+                <sdp8>         DU    881:U    886:D 
+                <deep>         DU    445:U    447:D 
+
+150             <deep>         DU    446:U    456:D    493:U 
+
+152             <deep>         DU    456:U    463:D 
+
+154             <deep>         DU    462:U    486:D 
+
+160             <deep>         DU    438:U    443:U    492:D 
+
+165             <deep>         DU    492:U    494:D 
+
+170             <deep>         DU    431:U    432:U    433:U    501:D 
+
+175             <deep>         DU    501:U    504:D 
+
+180             <deep>         DU    503:U    505:D 
+
+205             <deep>          D    519:D 
+
+210             <deep>         DU    516:U    541:D 
+
+218             <deep>         DU    546:U    550:D 
+
+220             <deep>         DU    545:U    559:D 
+
+230             <deep>         DU    555:U    573:D 
+
+701      format <MAIN>          D     85:D 
+
+702      format <MAIN>         DU     32:U     87:D 
+
+704      format <MAIN>         DU     35:U     89:D 
+
+705      format <MAIN>         DU     81:U     92:D 
+
+Cross Reference                Mon May 24 17:51:19 2004                page 65
+
+706      format <MAIN>          D     93:D 
+
+707      format <MAIN>          D     94:D 
+
+800             <MAIN>         DU     62:U     98:D 
+
+850             <MAIN>         DU     64:U    100:D 
+
+900             <MAIN>         DU     36:U    102:D 
+
+930      format <MAIN>         DU     95:D     98:U 
+
+940      format <MAIN>         DU     96:D    100:U 
+
+950      format <MAIN>         DU     97:D    102:U 
+
+------------------------------------------------------------------------------
+
+STATISTIC                   Mon May 24 17:51:19 2004                   page 66
+
+
+Date:     Mon May 24 17:51:19 2004
+Options:  -C -ftrap=%all,no%inexact -Xlist -v 
+Files:         1
+Lines:      1595
+Commons:       3
+Routines:     13 (MAIN: 1; Subroutines: 6; Functions: 3; Entry: 3)
+Messages:     49 (Errors: 17; Warnings: 32)

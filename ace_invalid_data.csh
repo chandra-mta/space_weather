@@ -1,9 +1,8 @@
 #! /bin/tcsh -f
-# supply current fluence as ARGV[1]
 #this rearms the system 24 at the midnight following the last violation -SJW
 # 11/03/03 BDS alert if no valid ACE data is seen for 2 hours
 
-if (!-d /pool1/mta) { `mkdir /pool1/mta`;}
+mkdir /pool1/mta
 set lock = "/pool1/mta/prot_data_violate"
 
     if ( -f $lock) then

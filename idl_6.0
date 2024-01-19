@@ -1,0 +1,52 @@
+#!/bin/csh -f
+
+if ( $?IDL_PATH ) then
+	set IDL_PATH_SAVE=${IDL_PATH}
+endif
+
+
+set EXEC=`basename $0 _6.0`
+set ARGS=$argv[1-]
+
+unsetenv LM_LICENSE_FILE
+
+echo " \
+Checking subnet for IDL license, one moment... \
+	"
+
+set NODE=`uname -n`
+set SUBNET=`egrep $NODE /etc/hosts | awk -F. '$1 !~ /#+/ {print $3}'`
+
+switch (${SUBNET})
+	case 4[0-7]:
+		echo "Using HEA (non-ASC) IDL license... \
+			"
+		source /soft/idl-sixty/idl_6.0/bin/idl_setup
+		breaksw
+	case 4[89]:
+	case 5[0-6]:
+        case 18[4-9]:
+        case 19[0-1]:
+		echo "Using ASC IDL license... \
+			"
+		#source /soft/idl-asc/idl_6.0/bin/idl_setup
+		breaksw
+	default:
+		echo "Not on HEA or ASC subnets: invalid IDL startup, exiting. \
+			"
+		exit 2
+		breaksw
+endsw
+
+if ( $?IDL_PATH_SAVE ) then
+	setenv IDL_PATH ${IDL_PATH_SAVE}:${IDL_PATH}
+endif
+setenv IDL_PATH ${IDL_PATH}:\+$IDL_DIR/user_contrib
+
+#printenv | egrep 'IDL|RSI'
+#echo ""
+#alias
+#echo ""
+#echo ""
+
+eval "$EXEC $ARGS"

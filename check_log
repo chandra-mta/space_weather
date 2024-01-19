@@ -1,0 +1,19 @@
+#! /bin/sh
+
+logfile=/home/mta/Logs/ace_plot.cron
+sntfile=/home/mta/Logs/ace_plot.cron.sent
+
+if (/usr/xpg4/bin/grep -q halted $logfile); then
+  if (test ! -s $sntfile); then
+    cp $logfile $sntfile
+    DT=`date +'%Y%m%d_%T'`
+    cp $logfile $logfile$DT
+    #echo "mta_plot_ace error. check $logfile$DT." | mailx -s mta_plot_ace_error brad\@head.cfa.harvard.edu 6172573986\@mobile.mycingular.com
+    #echo "mta_plot_ace error. check $logfile$DT." | mailx -s mta_plot_ace_error brad\@head.cfa.harvard.edu
+  fi
+elif (test -s $sntfile); then
+   /usr/bin/rm $sntfile
+    #echo "mta_plot_ace OK." | mailx -s mta_plot_ace_ok brad\@head.cfa.harvard.edu 6172573986\@mobile.mycingular.com
+    #echo "mta_plot_ace OK." | mailx -s mta_plot_ace_ok brad\@head.cfa.harvard.edu
+fi
+#end

@@ -1,0 +1,31 @@
+################################
+Creating GSE/GSM 3D orbit plots
+################################
+
+extract_next_two_days.py    --- extract two days amount of data from /proj/rac/ops/ephem/PE.EPH.gsme_in_Re
+
+gsm_plots.idl               --- controlling script, calling gsm_plots.pro
+gsm_plots.pro               --- main idl script to create GSEORBIT.gif and GSMORBIT.gif
+read_ephemeris.pro          --- collection of idl functions used by gsm_plots
+FluxImageColorKey.gif       --- color code list
+
+
+Input:
+    ./gs_data_2_day
+
+Output:
+    /data/mta4/www/RADIATION/GSEORBIT.gif
+    /data/mta4/www/RADIATION/GSMORBIT.gif
+
+web page:
+    http://cxc.cfa.harvard.edu/mta/orbit.html (top two plots)
+
+
+cronjob:
+--------
+
+mta @ boba-v
+
+10 8,20 * * * cd /data/mta4/space_weather/MSM; ./extract_next_two_days.py         > $HOME/Logs/plot_gsm.cron 
+15 8,20 * * * cd /data/mta4/space_weather/MSM; /usr/local/bin/idl  gsm_plots.idl >> $HOME/Logs/plot_gsm.cron 
+

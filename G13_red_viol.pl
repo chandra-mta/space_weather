@@ -1,4 +1,4 @@
-#! /opt/local/bin/perl -w
+#! /usr/bin/perl -w
 
 use lib '/home/mta/PERL';
 
@@ -52,9 +52,9 @@ while (<IN>) {
         printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p2;
         printf OUT " Limit: %6.2f \n", $P2_lim;
         close OUT;
-        `cat $p2r_lockfile | mailx -s "GOES Alert Telecon now" sot_red_alert`;
-        #`cat $p2r_lockfile | mailx -s "GOES Alert" sot_red_alert`;
-        #`cat $p2r_lockfile | mailx -s "GOES Alert TEST" brad`;
+        `cat $p2r_lockfile | mailx -s "GOES Alert Telecon now" sot_red_alert\@cfa.harvard.edu`;
+        #`cat $p2r_lockfile | mailx -s "GOES Alert" sot_red_alert\@cfa.harvard.edu`;
+        #`cat $p2r_lockfile | mailx -s "GOES Alert TEST" msobolewska\@cfa.harvard.edu`;
       } # if ($p2_wait == 5) {
     } else { # if (!-s $lockfile) { # if an alert hasn't been sent, send one
       `date >> $p2r_lockfile`;  # touch $lockfile
@@ -73,8 +73,8 @@ while (<IN>) {
         printf OUT " Value: %6.2f p/cm2-s-sr-MeV\n",$p5;
         printf OUT " Limit: %6.2f \n", $P5_lim;
         close OUT;
-        `cat $p5r_lockfile | mailx -s "GOES Alert Telecon now" sot_red_alert`;
-        #`cat $p5r_lockfile | mailx -s "GOES Alert TEST" brad`;
+        `cat $p5r_lockfile | mailx -s "GOES Alert Telecon now" sot_red_alert\@cfa.harvard.edu`;
+        #`cat $p5r_lockfile | mailx -s "GOES Alert TEST" msobolewska\@cfa.harvard.edu`;
       } # if ($p5_wait == 5) {
     } else { # if (!-s $lockfile) { # if an alert hasn't been sent, send one
       `date >> $p5r_lockfile`;  # touch $lockfile

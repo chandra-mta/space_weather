@@ -18,10 +18,13 @@ set WEBdir=/data/mta4/www
 #set file = http://www.sec.noaa.gov/ftpdir/lists/pchan/G12pchan_5m.txt
 #set file = ftp://ftp.sec.noaa.gov/pub/lists/pchan/G12pchan_5m.txt
 #set file = http://www.sec.noaa.gov/ftpdir/lists/pchan/G12pchan_5m.txt
-set file = http://www.swpc.noaa.gov/ftpdir/lists/particle/Gp_part_5m.txt
+    #    set file = http://legacy-www.swpc.noaa.gov/ftpdir/lists/particle/Gp_part_5m.txt
+   # updated Oct 6, 2015 SJW   
+set file =    http://services.swpc.noaa.gov/text/goes-particle-flux-primary.txt
 
-/opt/local/bin/lynx -source $file >! $SPACE_Wdir/G13Ereturned1
+#/usr/bin/lynx -source $file >! $SPACE_Wdir/G13Ereturned1
 #debug /opt/local/bin/lynx -source $file
+wget -q -O$SPACE_Wdir/G13Ereturned1 $file
 
 
 
@@ -29,9 +32,10 @@ set file = http://www.swpc.noaa.gov/ftpdir/lists/particle/Gp_part_5m.txt
 
 
     #run nawkscript to calculate averages and mins
-    nawk -F" " -f $SPACE_Wdir/G13_Eprocess.nawk $SPACE_Wdir/G13Ereturned >! $SPACE_Wdir/G13Edata
+    awk -F" " -f $SPACE_Wdir/G13_Eprocess.nawk $SPACE_Wdir/G13Ereturned >! $SPACE_Wdir/G13Edata
 
-/opt/local/bin/lynx -source http://www.swpc.noaa.gov/rt_plots/Electron.gif >! $WEBdir/elec_3d.gif
+#/usr/bin/lynx -source http://services.swpc.noaa.gov/images/goes-electron-flux.gif >! $WEBdir/elec_3d.gif
+wget -q -O$WEBdir/elec_3d.gif http://services.swpc.noaa.gov/images/goes-electron-flux.gif 
 
 #####################################################################
 
