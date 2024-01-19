@@ -17,6 +17,9 @@
 # TO RESET THE ALERTS SYSTEM, REMOVE THE "prot_violate" files
 # from /home/swolk , e.g.
 #
+# ADD ALERT IF > 12h WITHOUT VALID ACE DATA, 01/25/2018, MS
+#
+#
 #scrapper>cd /home/swolk
 #scrapper>mv prot_violate_PREDI prot_violate_PREDI.08Jun2000
 #scrapper>mv prot_violate_ESTKP  prot_violate_ESTKP.08Jun2000
@@ -36,7 +39,7 @@ set WEBdir=/data/mta4/www
 
 #sec set file = ftp://solar.sec.noaa.gov/pub/lists/ace/ace_epam_5m.txt
 #set file = ftp://www.sec.noaa.gov/pub/lists/ace/ace_epam_5m.txt
-set file = ftp://ftp.sec.noaa.gov/pub/lists/ace/ace_epam_5m.txt
+set file = ftp://ftp.swpc.noaa.gov/pub/lists/ace/ace_epam_5m.txt
 #set file = http://sec.noaa.gov/ftpdir/lists/ace/ace_epam_5m.txt
 #set file = http://legacy-www.swpc.noaa.gov/ftpdir/lists/ace/ace_epam_5m.txt
 
@@ -50,7 +53,34 @@ if ($count > 28) then
    /bin/rm $SPACE_Wdir/lasthour
     tail -24 $SPACE_Wdir/returned > $SPACE_Wdir/lasthour
     head -24 $SPACE_Wdir/lasthour > $SPACE_Wdir/last45
-    
+
+    # Update 12h ace archive
+    if (-e $SPACE_Wdir/ace_12h_archive) then
+        # Check the length of the archive
+        set ace_archive_length = `cat $SPACE_Wdir/ace_12h_archive | wc -l`
+        if ($ace_archive_length < 24) then
+            # this should not happen, but check just in case
+            /bin/rm $SPACE_Wdir/ace_12h_archive
+            cat $SPACE_Wdir/last45 > $SPACE_Wdir/ace_12h_archive
+        else
+            if ($ace_archive_length < 144) then
+                # prepare to add new data to the archive
+                head -n -23 $SPACE_Wdir/ace_12h_archive > $SPACE_Wdir/ace_12h_archive_tmp
+            else
+                # to keep the length at 144 lines = 12h
+                head -n -23 $SPACE_Wdir/ace_12h_archive | tail -n +2 > $SPACE_Wdir/ace_12h_archive_tmp
+            endif
+
+            # add new data to the archive
+            cat $SPACE_Wdir/last45 >> $SPACE_Wdir/ace_12h_archive_tmp
+            /bin/rm $SPACE_Wdir/ace_12h_archive
+            /bin/mv $SPACE_Wdir/ace_12h_archive_tmp $SPACE_Wdir/ace_12h_archive            
+        endif
+    else
+        # Initialize the 12h archive
+        cat $SPACE_Wdir/last45 > $SPACE_Wdir/ace_12h_archive
+    endif
+    $SPACE_Wdir/ace_12h_viol.pl
 
     #run nawkscript to calculate averages and mins
     gawk -F" " -f $SPACE_Wdir/process_ace.nawk $SPACE_Wdir/last45 > $SPACE_Wdir/acedata
@@ -62,13 +92,22 @@ if ($count > 28) then
     #smart_proc#$SPACE_Wdir/process_ace3.0.pl > $SPACE_Wdir/acedata
 
 #go collect ACE image and invert. 
-lynx -source http://services.swpc.noaa.gov/images/ace-epam-7-day.gif | /usr/bin/convert -negate - - >! $WEBdir/Epam_7di.gif
-lynx -source http://services.swpc.noaa.gov/images/ace-epam-7-day.gif >! $WEBdir/Epam_7d.gif
-lynx -source http://services.swpc.noaa.gov/images/ace-epam-7-day.gif >! $WEBdir/mta_ace_plot.gif
+
+#lynx -source http://services.swpc.noaa.gov/images/ace-epam-7-day.gif | /usr/bin/convert -negate - - >! $WEBdir/Epam_7di.gif
+#lynx -source http://services.swpc.noaa.gov/images/ace-epam-7-day.gif >! $WEBdir/Epam_7d.gif
+#lynx -source http://services.swpc.noaa.gov/images/ace-epam-7-day.gif >! $WEBdir/mta_ace_plot.gif
+
+wget -q -O $WEBdir/Epam_7d.gif       http://services.swpc.noaa.gov/images/ace-epam-7-day.gif
+wget -q -O $WEBdir/mta_ace_plot.gif  http://services.swpc.noaa.gov/images/ace-epam-7-day.gif
+
+/usr/bin/convert -negate $WEBdir/Epam_7d.gif     $WEBdir/Epam_7di.gif
 /usr/bin/convert -negate $WEBdir/mta_ace_plot_P3.gif $WEBdir/Epam_7di_P3.gif
 
 # get wind speed etc. plot
-lynx -source http://services.swpc.noaa.gov/images/ace-mag-swepam-7-day.gif >! $WEBdir/Mag_swe_7d.gif
+#lynx -source http://services.swpc.noaa.gov/images/ace-mag-swepam-7-day.gif >! $WEBdir/Mag_swe_7d.gif
+
+wget -q -O $WEBdir/Mag_swe_7d.gif  http://services.swpc.noaa.gov/images/ace-mag-swepam-7-day.gif
+
 /usr/bin/convert -negate $WEBdir/Mag_swe_7d.gif $WEBdir/Mag_swe_7di.gif
 
 #go and collect Kp image 
@@ -76,8 +115,8 @@ lynx -source http://services.swpc.noaa.gov/images/ace-mag-swepam-7-day.gif >! $W
 #sed s/'<CENTER><IMG SRC="'/''/1 $SPACE_Wdir/tmpkp | sed s/'"><'/' '/1 | sed s/'\/CENTER>'/''/1 >! $SPACE_Wdir/kpimagename
 #set image_varkp=`cat $SPACE_Wdir/kpimagename`
 
-lynx -source http://services.swpc.noaa.gov/images/wing-kp-24-hour.gif >!  $WEBdir/wingkp.gif
-/usr/bin/convert -negate  $WEBdir/wingkp.gif - >! $WEBdir/wingkp_i.gif
+#lynx -source http://services.swpc.noaa.gov/images/wing-kp-24-hour.gif >!  $WEBdir/wingkp.gif
+#/usr/bin/convert -negate  $WEBdir/wingkp.gif - >! $WEBdir/wingkp_i.gif
 
 cat $SPACE_Wdir/header $SPACE_Wdir/acedata  $SPACE_Wdir/image2 $SPACE_Wdir/rob1 $SPACE_Wdir/footer >! $WEBdir/ace.html
 

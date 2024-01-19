@@ -1,0 +1,29 @@
+
+Here is a simple approach to get files via ftp. It works well
+from a PC as well as unix, or other, machine.
+
+
+Create a file named "ftp.txt" with the following (be sure to
+put YOUR email address in the user line!). This example gets
+the most recent Solar Region Summary and Solar Geophysical
+Activity Summary from the /latest directory:
+ 
+    open ftp.sec.noaa.gov
+    user ftp vraben@sec.noaa.gov
+    cd pub/latest
+    get srs.txt regions.noa
+    get sgas.txt activity.noa
+    bye
+ 
+
+Create an command script file with the following line:
+ 
+    ftp -n < ftp.txt
+ 
+
+When you execute the command script file the regions.noa
+and activity.noa files will be written.
+
+
+
+.

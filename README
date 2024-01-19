@@ -1,1 +1,69 @@
-All MTA space weather monitoring. ACE, GOES, KP.
+This directory contains several example Korn shell scripts
+to demonstrate how to automatically retrieve files
+from SEC's anonymous ftp server.
+
+The sample_cron_script script is invoked by the Unix "cron"
+utility. It passes names of files to the function "ftp_get"
+which builds a file of ftp commands and then invokes ftp.
+
+The test_ftp_get may be used to manually test the ftp_get function.
+
+The specifics of how you set up cron will vary, depending upon
+the operating system you are using. 
+
+   HPUX Example:
+
+   You need to create a file (let's call it schedule) to be used by cron
+   to automatically call this script at a specified time.
+  
+   The first five fields of each entry in the schedule contain integer patterns 
+   that specify the time and date in the following format:
+            Minute (0-59)
+            Hour (0-23, UT time)
+            Day of the month (1-31)
+            Month of the year (1-12)
+            Day of the week (1-7, 1 is Monday)
+  
+   Each of these patterns may contain
+       o A number in the range above
+       o Two numbers separated by a minus sign, indicating an inclusive range
+       o A list of numbers separated by commas, meaning any of the numbers
+       o An asterisk, meaning all legal values for that field.
+
+  
+   The following is a sample entry in the schedule to transfer the
+   solar region summary report at 1:48 a.m.  each day. 
+
+    48  01  *   *  *  /usr/local/ksh/sample_ftp_get.ksh
+
+   Then submit the schedule to the crontab utility as follows:
+       crontab schedule
+  
+   If the crontab does not permit you to submit the schedule, the sysadmin for your
+   machine must add your username to the file /usr/lib/cron/cron.allow
+   Also, the cron uses the default timezone for your particular machine, usually
+   EDT. 
+   
+   DEC5000 Example:
+
+   The field format is identical to the HPUX example. However, there is no crontab
+   command. The entries are made directly in the file: /usr/lib/crontab
+   Be careful though, the script run as the superuser, root, so bad things 
+   can happen if something isn't mounted. The sample scripts here are pretty 
+   paranoid about checking for such things -- but there are no guarantees! 
+
+   Vern Raben (vraben@sec.noaa.gov)
+
+.
+
+
+Cron job
+--------
+#mta @ r2d2-v
+mta @ boba-v
+1,6,11,16,21,26,31,36,41,46,51,56 * * * * cd /data/mta4/space_weather/ ; ./G15_xray.csh     > $HOME/Logs/goes15_xray.cron 2>&1
+4,9,14,19,24,34,39,44,49,54       * * * * cd /data/mta4/space_weather/ ; ./G15_calc.csh     > $HOME/Logs/goes15_c3po.cron 2>&1
+2,7,12,17,22,27,32,37,42,47,52,57 * * * * cd /data/mta4/space_weather/ ; ./calculate_v2.csh > $HOME/Logs/ace.cron 2>&1
+#
+5 * * * * cd /data/mta4/space_weather/ ;    ./calculate_fast.csh                                  > $HOME/Logs/ace_fast.cron          2>&1
+

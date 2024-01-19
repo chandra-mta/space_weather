@@ -1,0 +1,38 @@
+PREDICT's "vocalizer" utility and associated files are contained within
+this directory.  Under the direction of PREDICT, selected audio samples
+from this directory are played through the system's soundcard at specific
+intervals during the duration of a satellite pass.
+
+The "vocalizer" utility will read WAV files containing uncompressed
+PCM data, provided the bit rate and word size is supported by your
+soundcard.
+
+The voice samples in this directory were obtained
+via AT&T's voice synthesis demonstration web site
+(http://www.research.att.com/projects/tts/demo.html), and
+are used in this application under permission granted by AT&T:
+
+>
+> From: John A. Magliacane 
+> Sent: Saturday, June 07, 2003 5:20 PM
+> To: tts-feedback@research.att.com
+> Subject: Use of voice samples in free software
+>
+> Dear Sir,
+>
+> I would appreciate knowing if permission could be granted for use of
+> speech samples obtained from your web site in a non-commercial, free,
+> open-source software application.
+>
+> Thank you for your time and consideration in this matter.
+>
+>
+> Sincerely,
+>
+> John A. Magliacane
+
+
+I believe that you are ok, as long as no money is being made.
+
+-- Juergen Schroeter
+

@@ -1,0 +1,40 @@
+
+Copying data and plots from NOAA STEREO site
+############################################
+
+calculate.csh   ---- the script to copy data and plots from noaa site
+                     and update a web page.
+
+                     http://legacy-www.swpc.noaa.gov/stereo/
+
+                     the following files are used to create the page:
+
+                        header
+                        imageA
+                        imageB
+                        footer
+Input:
+    ftp://ftp.sec.noaa.gov/pub/lists/stereo/sta_impact_5m.txt
+    ftp://ftp.sec.noaa.gov/pub/lists/stereo/stb_impact_5m.txt
+    http://legacy-www.swpc.noaa.gov/stereo/data/impact_A_5m_7d.gif 
+    http://legacy-www.swpc.noaa.gov/stereo/data/impact_B_5m_7d.gif
+
+Output:
+    ./stereoAdata
+    ./stereoBdata
+
+    /data/mta4/www/RADIATION/STEREO2/
+        stereo.html
+        impact_A_5m_7d.gif
+        impact_B_5m_7d.gif
+
+    http://cxc.cfa.harvard.edu/mta/RADIATION/STEREO2/stereo.html
+
+Note: It seems side B is not taking data. (as Oct 21, 2015)
+
+
+Cron job:
+mta @ boba-v
+
+2,6,11,16,21,26,31,36,41,46,51,56 * * * * /data/mta4/space_weather/STEREO/calculate.csh>> $HOME/Logs/stereo.cron 
+

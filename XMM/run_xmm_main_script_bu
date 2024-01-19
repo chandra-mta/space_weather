@@ -1,0 +1,4 @@
+setenv IDL_PATH "/data/mta4/IDL:"
+setenv IDL_DLM_PATH "/data/mta4/IDL/CXFORM:<IDL_DEFAULT>"
+
+perl /data/mta4/space_weather/XMM/run_xmm.perl 

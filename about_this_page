@@ -1,0 +1,110 @@
+<HTML>
+<HEAD>
+   <TITLE>About ACE Monitoring </TITLE>
+<!-- Changed by: Scott J. Wolk, 22-Apr-1998 -->
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; SunOS 5.5 sun4m) [Netscape]">
+</HEAD>
+<BODY TEXT="#DDDDDD" BGCOLOR="#000000" LINK="#FF0000" VLINK="#FFFF22" 
+ALINK="#7500FF">
+
+<center>
+<H2>
+About ACE Monitoring 
+</h2>
+</center>
+<br>
+<br>
+
+<h3>The Science Operations Team has two proton monitoring systems.</h3>
+<ol>
+<li> Orbit Monitor:<br>
+  
+
+The fluence of ACE protons in the 130-214 keV energy range is
+integrated over each Chandra orbit, while Chandra is above 70,000 km 
+geocentric distance. The fluence measurement is reset to 0 while
+Chandra is below 70,000 km.
+<p>
+If the fluence exceeds a threshold, SOT and FOT members are alerted 
+via pagers and via email. The alert message provides the measured
+fluence and the integrated time.
+<p>
+The latest ACE proton flux, and the integrated fluence, are on the
+top line of the Chandra snapshot display (f_ACE and F_ACE respectively),
+and on the SOT's  <a href="http://asc.harvard.edu/mta/ace.html">
+ACE page</a>.
+<p>
+ACE proton energy range: 130 - 214 keV
+<p>
+Fluence threshold = 1 x 10E9 protons/cm2-ster-MeV
+<ul>
+<li>Alert list:  
+<li>Pagers: 
+<ul>
+<li> Dan Schwartz        Email: sot_lead@cfa 
+<li> Robert Cameron             emartin
+<li> Paul Plucinsky             dshropshire
+<li> Scott Wolk
+<li> Bill Podgorski
+<li> Eric Martin
+<li> Dan Shropshire
+</UL>
+<li> Email:
+<ul>
+<li> sot_lead
+<li> emartin
+<li> dshropshire
+</ul>
+</ul>
+Alert scheme: 3 alerts, at 30-minute intervals.<br>
+
+Details of operation: see /proj/gads6/ops/ACE/README on the HEAD LAN.
+<pre>
+
+
+</pre>
+<li> Two Hour Monitor:
+<h4><font color=FF0000> A violation of this limit is more serious than the orbital limit
+since it implies a similar flux in a shorter time scale.</h4> </font>
+
+The fluence of ACE protons in the 130-214 keV energy range is
+integrated as a runing average over each 2 hour period.
+This is 24 measurments during each period.  Bad measurments are
+dropped and the average Flux particles/cm2-s-ster-MeV is calculated.
+<p>
+If the fluence exceeds a threshold, SOT and FOT members are alerted 
+via pagers and via email. The alert message provides the measured
+fluence and the integrated time.
+<p>
+The latest ACE proton flux, and the integrated fluence, are on the
+top line of the Chandra snapshot display (f_ACE and F_ACE respectively),
+and on the SOT's  <a href="http://asc.harvard.edu/mta/ace.html">
+ACE page</a>.
+<p>
+ACE proton energy range: 130 - 214 keV
+<p>
+Fluence threshold = 50,000 protons/cm2-ster-MeV-S average over a 2
+hour window.
+
+<ul>
+<li>Alert list:  
+<li>Pagers: 
+<ul>
+<li> Dan Schwartz        
+<li> Robert Cameron      
+<li> Paul Plucinsky      
+<li> Scott Wolk
+<li> Shanil Virani
+<li> Eric Martin
+<li> Dan Shropshire
+</UL>
+<li> Email:
+<ul>
+<li> sot_lead
+<li> fot
+</ul> 
+Alert scheme: 3 alerts, at 25-minute intervals.<br>
+
+
+
+

@@ -1,0 +1,62 @@
+#sed -f sedscr #process_kp.nawk# > xx
+#mv xx #process_kp.nawk#
+sed -f sedscr G10_process.nawk > xx
+mv xx G10_process.nawk
+sed -f sedscr G10_process.nawk~ > xx
+mv xx G10_process.nawk~
+sed -f sedscr G8_calc.csh > xx
+mv xx G8_calc.csh
+sed -f sedscr G8_process.nawk > xx
+mv xx G8_process.nawk
+sed -f sedscr calc_test.csh~ > xx
+mv xx calc_test.csh~
+sed -f sedscr calculate.csh > xx
+mv xx calculate.csh
+sed -f sedscr calculate.csh~ > xx
+mv xx calculate.csh~
+sed -f sedscr calculate.csh.dev~ > xx
+mv xx calculate.csh.dev~
+sed -f sedscr calculate.old > xx
+mv xx calculate.old
+sed -f sedscr calculate.old > xx
+mv xx calculate.old
+sed -f sedscr calculate.old.csh > xx
+mv xx calculate.old.csh
+sed -f sedscr calculate.prev > xx
+mv xx calculate.prev
+sed -f sedscr calculate_kp.csh > xx
+mv xx calculate_kp.csh
+sed -f sedscr calculate_kp.csh~ > xx
+mv xx calculate_kp.csh~
+sed -f sedscr goes_10_calc.csh > xx
+mv xx goes_10_calc.csh
+sed -f sedscr goes_10_calc.csh~ > xx
+mv xx goes_10_calc.csh~
+sed -f sedscr nawk2 > xx
+mv xx nawk2
+sed -f sedscr nawk2~ > xx
+mv xx nawk2~
+sed -f sedscr nawkscript > xx
+mv xx nawkscript
+sed -f sedscr nawkscript.bad > xx
+mv xx nawkscript.bad
+sed -f sedscr nawkscript~ > xx
+mv xx nawkscript~
+sed -f sedscr process_ace.dev~ > xx
+mv xx process_ace.dev~
+sed -f sedscr process_ace.nawk > xx
+mv xx process_ace.nawk
+sed -f sedscr process_ace.nawk~ > xx
+mv xx process_ace.nawk~
+sed -f sedscr process_kp.nawk > xx
+mv xx process_kp.nawk
+sed -f sedscr process_kp.nawk~ > xx
+mv xx process_kp.nawk~
+sed -f sedscr process_kp_4_alert.nawk > xx
+mv xx process_kp_4_alert.nawk
+sed -f sedscr run-acorn.pl > xx
+mv xx run-acorn.pl
+sed -f sedscr run-acorn.pl~ > xx
+mv xx run-acorn.pl~
+sed -f sedscr test.csh~ > xx
+mv xx test.csh~

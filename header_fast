@@ -1,0 +1,19 @@
+<HTML>
+<HEAD>
+  <TITLE>Quicklook ACE Observations </TITLE>
+  <META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+  <META HTTP-EQUIV="Expires" CONTENT="-1">
+</HEAD>
+<BODY TEXT="#DDDDDD" BGCOLOR="#000000" LINK="#FF0000" VLINK="#FFFF22" 
+ALINK="#7500FF">
+
+<center>
+<h2>Quicklook ACE OBSERVATIONS</h2>
+<h3>from the ACE downlink data</h3>
+<h4> (up to 24 hours latency) </h4>
+(hit SHIFT+RELOAD to update, page will automatically reload every 5 minutes)
+</center>
+<br>
+<li><a href ="./returned_fast_3d"> Most recent ~3 days </a> 
+<br>
+<pre>

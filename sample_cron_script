@@ -1,0 +1,40 @@
+Delete this line - The gopher server doesn't like lines beginning with #!
+#!/bin/ksh
+#
+# NAME
+#   sample_cron_script
+# PURPOSE
+#   A demo Korn shell script that will ftp to SEC's anonymous ftp
+#   site and get some files. This routine would normally be 
+#   invoked by the cron utility.
+# AUTHOR
+#   Vern Raben - Jan 1995 (mail comments to: vraben@sec.noaa.gov)
+
+# Scripts invoked by the cron utility don't have much of a command
+# search path, so its a good idea set it explicitly
+PATH=/bin:/usr/ucb/bin:/usr/bin:/usr/local/bin:
+
+# The autoload command causes the script to load the ftp_get function
+# so you don't have to copy it into every script that uses it.
+autoload ftp_get
+
+# You need to tell the autoload command where to search to find the
+# ftp_get function, this assumes you have installed ftp_get in
+# a directory called /usr/local/ksh
+FPATH=/usr/local/ksh:
+
+# You may want to keep an errlog in case something goes wrong...
+errlog=/tmp/ftp_get_errlog.$$
+
+# For example, call ftp_get to acquire the latest solar region summary.
+# (The file will be placed in the default directory specified by ftp_get).
+ftp_get /pub/latest/SRS.txt 2>$errlog
+if [ $? -ne 0 ]; then
+  print -u2 "Error detected at `date -u`:"
+  cat $errlog $1>2
+else
+  rm -f $errlog
+fi
+
+
+.

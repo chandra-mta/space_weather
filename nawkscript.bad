@@ -1,0 +1,110 @@
+BEGIN{ 
+	time2   = -1
+	E38m	=100000.
+	E175m	=100000.
+	P56m	=100000.
+	P130m	=100000.
+	P337m   =100000.
+	P761m	=100000.
+	P1073m  =100000.
+
+fmt1="%4d %2d %2d %4d %11.3f %11.3f %11.3f %11.3f %11.3f %11.3f %11.3f\n"
+
+print "                                        Most recent ACE observations"
+print "                                 Differential Flux particles/cm2-s-ster-MeV"
+print " "
+print " UT Date   Time    --- Electron keV ---     --------------------- Protons keV -------------------"
+print "  YR MO DA HHMM     38-53     175-315        56-78     130-214     337-594    761-1220   1073-1802"
+
+
+	   }
+
+ 
+
+{
+printf(fmt1, $1, $2, $3, $4, $8,$9,$11,$12,$13,$14,$15)
+#print $1" "$2" "$3" "$4" "$5" "$6" "$7"  "$8" "$9" "$10" "$11" "$12" "$13" "$14" "$15" "$16
+
+	
+	year += $1
+	month += $2
+	day += $3
+	time += $4
+	E38	+=$8
+	E175	+=$9
+	P56	+=$11
+	P130	+=$12
+	P337    +=$13
+	P761	+=$14
+	P1073   +=$15
+
+
+#find minima (maxima for time)
+	if ($4 > time2)   time2 = $4
+	if ($8 < E38m)  E38m = $8
+	if ($9 < E175m)  E175m = $9
+	if ($11 < P56m)  P56m = $11
+	if ($12 < P130m)  P130m = $12
+	if ($13 < P337m)  P337m = $13
+	if ($14 < P761m)  P761m = $14
+	if ($15 < P1073m)  P1073m = $15
+
+}		
+
+END	{
+
+	yeara = year/9
+	montha = month/9
+	daya = day/9
+#	time2 = time / 9.
+	E38a    =E38 / 9. 	
+	E175a	=E175 / 9. 
+	P56a  	=P56 / 9. 
+	P130a 	=P130 / 9. 
+	P337a   =P337 / 9. 
+	P761a 	=P761 / 9. 
+	P1073a  =P1073 / 9.
+
+	E38m    =E38m / 1. 	
+	E175m	=E175m / 1. 
+	P56m 	=P56m/ 1. 
+	P130m 	=P130m / 1. 
+	P337m   =P337m / 1. 
+	P761m 	=P761m / 1. 
+	P1073m  =P1073m / 1.
+
+#	if (E175n  > 100.)  system ("/data/mta4/space_weather/aceviolation_electrons.csh")
+        if (P130n  > 100000.)  system ("/data/mta4/space_weather/aceviolation_protons.csh")
+
+print " "
+print " "
+print " "
+print " "
+
+print "                         45 minute averaged Real-time Differential Electron and Proton Flux"
+print "                                 Differential Flux particles/cm2-s-ster-MeV"
+print " "
+print " UT Date   Time    --- Electron keV ---     --------------------- Protons keV -------------------"
+print "  YR MO DA HHMM     38-53     175-315        56-78     130-214     337-594    761-1220   1073-1802"
+#print year " " month "  " day " " time2"\t"E38"\t"E175"\t "P56"\t"P130"\t"P337"\t"P761"\t"P1073
+
+#printyeara " " montha " " daya " " time2"\t" E38a"\t"E175a"\t"P56a"\t"P130a"\t"P337a"\t"P761a"\t"P1073a
+printf(fmt1, yeara, montha, daya, time2, E38a,E175a,P56a,P130a,P337a,P761a,P1073a)
+
+print " "
+print " "
+print " "
+print " "
+
+print "                             Minimun value observed in last 45 minutes (current time)"
+print "                                  Differential Flux particles/cm2-s-ster-MeV"
+print " "
+print " UT Date   Time    --- Electron keV ---     --------------------- Protons keV -------------------"
+print "  YR MO DA HHMM     38-53     175-315        56-78     130-214     337-594    761-1220   1073-1802"
+#printyeara " " montha " " daya " " time2"\t" E38m"\t"E175m"\t"P56m"\t"P130m"\t"P337m"\t"P761m"\t"P1073m	
+
+
+printf(fmt1, yeara, montha, daya, time2, E38m,E175m,P56m,P130m,P337m,P761m,P1073m)
+
+}
+#

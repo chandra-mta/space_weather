@@ -1,0 +1,12 @@
+sed -f ../sedscr kpalert.pl > xx
+mv xx kpalert.pl
+sed -f ../sedscr kpalert.pl.old > xx
+mv xx kpalert.pl.old
+sed -f ../sedscr kpalert.pl~ > xx
+mv xx kpalert.pl~
+sed -f ../sedscr kpmon.pl > xx
+mv xx kpmon.pl
+sed -f ../sedscr kptest.pl > xx
+mv xx kptest.pl
+sed -f ../sedscr kptest.pl~ > xx
+mv xx kptest.pl~

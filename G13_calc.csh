@@ -4,8 +4,6 @@
 set SPACE_Wdir=/data/mta4/space_weather
 set WEBdir=/data/mta4/www
 
-#set SPACE_Wdir=/data/mta4/CVS_test/space_weather
-#set WEBdir=/data/mta4/CVS_test/space_weather
 #set today=`date '+%y%m%d'`
 
 # 01/14/02 BDS -SEC data problems, changed to www.sec.noaa.gov
@@ -20,9 +18,12 @@ set WEBdir=/data/mta4/www
 #set file = http://www.sec.noaa.gov/ftpdir/lists/pchan/G12pchan_5m.txt
 #set file = ftp://ftp.sec.noaa.gov/pub/lists/pchan/G12pchan_5m.txt
 #set file = http://www.sec.noaa.gov/ftpdir/lists/pchan/G12pchan_5m.txt
-set file = http://www.swpc.noaa.gov/ftpdir/lists/pchan/Gp_pchan_5m.txt
+#set file = http://legacy-www.swpc.noaa.gov/ftpdir/lists/pchan
+#updated Oct 6, 2015 SJW  Primary is Goes 13
+set file =    http://services.swpc.noaa.gov/text/goes-energetic-proton-flux-primary.txt
 
-/opt/local/bin/lynx -source $file >! $SPACE_Wdir/G13returned1
+#/usr/bin/lynx -source $file >! $SPACE_Wdir/G13returned1
+wget -q -O$SPACE_Wdir/G13returned1   $file
 #debug /opt/local/bin/lynx -source $file
 
 
@@ -31,14 +32,15 @@ set file = http://www.swpc.noaa.gov/ftpdir/lists/pchan/Gp_pchan_5m.txt
 
 
     #run nawkscript to calculate averages and mins
-    nawk -F" " -f $SPACE_Wdir/G13_process.nawk $SPACE_Wdir/G13returned >! $SPACE_Wdir/G13data
+    awk -F" " -f $SPACE_Wdir/G13_process.nawk $SPACE_Wdir/G13returned >! $SPACE_Wdir/G13data
 
+/data/mta4/space_weather/goes_hrc_proxy_viol.pl # checks for goes hrc proxy violation
 /data/mta4/space_weather/G13_yellow_viol.pl # check for violations
-/data/mta4/space_weather/G13_red_viol.pl # check for violations
+#/data/mta4/space_weather/G13_red_viol.pl # check for violations
 
 #go collect the image 
 #sec #/opt/local/bin/lynx -source http://solar.sec.noaa.gov/rt_plots/satenvBL.html | tail -10 | head -1 >! $SPACE_Wdir/G12tmp
-/opt/local/bin/lynx -source http://www.sec.noaa.gov/rt_plots/satenvBL.html | tail -14 | head -1 >! $SPACE_Wdir/G13tmp
+/usr/bin/lynx -source http://legacy-www.swpc.noaa.gov/rt_plots/satenvBL.html | tail -14 | head -1 >! $SPACE_Wdir/G13tmp
 #remove the junk
 sed s/'<center><img src="'/''/1 $SPACE_Wdir/G13tmp  | sed s/'"><'/' '/1 | sed s/'\/center>'/' '/1 >! $SPACE_Wdir/G13imagename
 
@@ -46,13 +48,14 @@ sed s/'<center><img src="'/''/1 $SPACE_Wdir/G13tmp  | sed s/'"><'/' '/1 | sed s/
 set image_var=`cat $SPACE_Wdir/G13imagename`
 
 # copy it over, instead of linking
-/opt/local/bin/lynx -source http://www.sec.noaa.gov/$image_var >! $WEBdir/satenvBL.gif
+#/usr/bin/lynx -source http://services.swpc.noaa.gov/images/satellite-env.gif >! $WEBdir/satenvBL.gif
+wget -q -O$WEBdir/satenvBL.gif  http://services.swpc.noaa.gov/images/satellite-env.gif
 
 #####################################################################
 
 #go collect the second image image 
 #sec #/opt/local/bin/lynx -source http://solar.sec.noaa.gov/rt_plots/pro_3d.html | tail -11 | head -1 >! $SPACE_Wdir/G12tmp2
-/opt/local/bin/lynx -source http://www.sec.noaa.gov/rt_plots/pro_3d.html | tail -11 | head -1 >! $SPACE_Wdir/G13tmp2
+/usr/bin/lynx -source http://legacy-www.swpc.noaa.gov/rt_plots/pro_3d.html | tail -11 | head -1 >! $SPACE_Wdir/G13tmp2
 #remove the junk
 sed s/'<center><img src="'/''/1 $SPACE_Wdir/G13tmp2  | sed s/'"><'/' '/1 | sed s/'\/center>'/' '/1 >! $SPACE_Wdir/G13imagename2
 
@@ -61,8 +64,10 @@ set image_var2=`cat $SPACE_Wdir/G13imagename2`
 
 # copy it over, instead of linking
 #/opt/local/bin/lynx -source http://www.sec.noaa.gov/$image_var2 >! $WEBdir/goes_pro_3d.gif
-/opt/local/bin/lynx -source http://www.swpc.noaa.gov/rt_plots/Proton.gif >! $WEBdir/goes_pro_3d.gif
-/opt/local/bin/lynx -source http://www.swpc.noaa.gov/rt_plots/Xray.gif >! $WEBdir/goes_Xray.gif
+#/usr/bin/lynx -source http://services.swpc.noaa.gov/images/goes-proton-flux.gif >! $WEBdir/goes_pro_3d.gif
+#/usr/bin/lynx -source http://services.swpc.noaa.gov/images/goes-xray-flux.gif >! $WEBdir/goes_Xray.gif
+wget -q -O$WEBdir/goes_pro_3d.gif http://services.swpc.noaa.gov/images/goes-proton-flux.gif
+wget -q -O$WEBdir/goes_Xray.gif   http://services.swpc.noaa.gov/images/goes-xray-flux.gif
 
 #####################################################################
 # G12image and G12image2 doesn't change now, so nbot need to rewrite

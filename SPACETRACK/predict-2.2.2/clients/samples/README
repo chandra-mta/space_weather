@@ -1,0 +1,426 @@
+			=========================
+			PREDICT's Socket Commands
+			=========================
+
+The network sockets feature of PREDICT allows the program to operate
+as a server providing tracking data to client applications using the
+UDP protocol.  It is even possible to have the PREDICT server and
+client applications running on separate machines provided the
+clients are connected to the server through a network.
+
+
+System Configuration
+====================
+For the socket-based server features of PREDICT to function, the
+following line needs to be added to the end your /etc/services file:
+
+	predict   1210/udp
+
+The port number (1210) can be changed if desired.  There is no need
+to recompile the program if it is changed.  As of PREDICT version
+2.1.5, an alternate port may be specified for use by PREDICT via
+the -n command-line switch.
+
+
+Program Operations
+==================
+Start PREDICT with the -s switch (predict -s) to start the program as a
+socket-based server.  The program will start and automatically go into the
+multi-satellite tracking mode.  Clients may poll PREDICT for tracking data
+when the program is running in either the multi-satellite or single-satellite
+tracking mode.  When in multi-tracking mode, tracking data for any of the
+24 satellites in the program's database may be accessed by client programs.
+When in single-tracking mode, only live tracking data for the single satellite
+being tracked may be accessed.  Either tracking mode may be ended at any
+time.  When this is done, the socket code will return the last calculated
+satellite tracking data until the program is again put into a real-time
+tracking mode.  This allows the user to return to the main menu, and use
+other features of the program without sending potentially harmful data
+to client programs.
+
+
+Client Program Interface
+========================
+The best way to write a client program is to use the demonstration program
+(demo.c) included in this distribution of PREDICT as a guide.  The sample
+program has comments to explain how each component operates.  It is useful
+to pipe the output of this program through "less" to easily browse through
+the data returned (demo | less).
+
+In operation, a character array is filled with the command and arguments
+to be sent to PREDICT.  A socket connection is then opened, the request
+is sent, a response is received, and the socket connection is closed.
+The command and arguments are in ASCII text format.
+
+A sample client application written in Perl is included under the perl
+subdirectory.
+
+
+PREDICT Socket Command Summary
+==============================
+The following are the socket commands interpreted by PREDICT when the
+program is running in either the single satellite or multi-satellite
+tracking mode:
+
+Command: GET_SAT
+Argument: satellite name or object number
+Purpose: To poll PREDICT for live tracking data.
+Return value: Newline ('\n') delimited string of tracking data.
+Example: GET_SAT OSCAR-14
+Data returned:
+
+OSCAR-40
+120.92 
++0.69 
+239.42 
++24.91
+1049080059
+18283.08
+43466.79
+40140.96
+2.48   
+1109
+D
+291.94 
+-119.61
+32.05  
+
+Description: The values are identified by the order in which they are
+returned.  Referring to the example above,
+
+Name:		OSCAR-40
+Long:		120.92 (degrees West)
+Lat:		  0.69 (degrees North)
+Az:		239.42 (degrees)
+El:		+24.91 (degrees)
+Next AOS/LOS:	1049080059 (seconds since 01-Jan-1970)=Mon Mar 31 03:07:39 2003
+Footprint:	18283.08 (kilometers)
+Range:		43466.79 (kilometers)
+Altitude:	40140.96 (kilometers)
+Velocity:	2.48 (kilometers/hour)
+Orbit Number:	1109 (revolutions)
+Visibility:	D (currently in sunlight)
+Orbital Phase:	291.94 (modulo 360)
+Eclipse Depth: -119.61 (degrees)
+Squint:		32.05 (degrees, or 360.0 if squint is not applicable)
+
+If the satellite is in either a geostationary orbit or an orbit that
+does not permit AOS to occur at the groundstation, a zero (0) is returned
+for the next AOS/LOS time.  Otherwise, the next AOS time is provided for
+satellites not currently in range of the ground station.  If the satellite
+is in range, then the LOS time is provided.
+
+The name provided as an argument to GET_SAT must match the full length
+name contained in PREDICT's orbital database, and may contain spaces.
+The command string passed to PREDICT must end with an end of line ('\n')
+character.  The satellite's object number may be used in lieu of the
+satellite name.
+
+The visibility codes returned are the same as those displayed in PREDICT's
+multi-satellite tracking mode.  An 'N' indicates the satellite is not in
+sunlight, nor is it optically visible at the ground station.  A 'D'
+indicates that the satellite is in sunlight, but not optically visible
+at the ground station.  A 'V' indicates the satellite is in sunlight,
+while the ground station is in darkness, meaning the satellite may be
+optically visible at the ground station.
+
+If the satellite has decayed, the Next AOS/LOS time will be reported
+as 0.  All other values will also be set to zero.  The visibility code
+will be set to 'N'.
+
+-----------------------------------------------------------------------------
+
+Command: GET_DOPPLER
+Argument: satellite name or object number
+Purpose: To poll PREDICT for normalized Doppler shift information.
+Return value: Doppler shift information.
+Example: GET_DOPPLER OSCAR-27
+Data returned:
+
+961.742249
+
+Description: The Doppler shift returned by PREDICT is a normalized to a
+100 MHz downlink from the satellite, and must be scaled by the client to
+the operating frequency of interest.  For example, to determine the amount
+of Doppler shift experienced on a 435 MHz downlink, simply multiply the
+value returned by 4.35.  To calculate the Doppler shift on a 146 MHz
+uplink, multiply the amount by -1.46.
+
+-----------------------------------------------------------------------------
+
+Command: GET_SUN
+Argument: none
+Purpose: To poll PREDICT for the Sun's current position.
+Return value: The Sun's positional data.
+Example: GET_SUN
+Data returned:
+
+283.48 
+-23.71
+-5.51  
+190.61 
+347.15 
+
+Description: Current azimuth is returned first, followed by elevation,
+declination, Greenwich hour angle, and right ascension, all in degrees.
+
+-----------------------------------------------------------------------------
+
+Command: GET_MOON
+Argument: none
+Purpose: To poll PREDICT for the Moon's current position.
+Return value: The Moon's positional data.
+Example: GET_MOON
+Data returned:
+
+267.22 
++16.98
+8.79   
+149.22 
+28.55  
+
+Description: Current azimuth is returned first, followed by elevation,
+declination, Greenwich hour angle, and right ascension, all in degrees.
+
+-----------------------------------------------------------------------------
+
+Command: GET_LIST
+Argument: none
+Purpose: To poll PREDICT for the satellite names in the current database.
+Return value: String containing all satellite names in PREDICT's database.
+Example: GET_LIST
+Data returned:
+
+OSCAR-7
+OSCAR-10
+OSCAR-11
+OSCAR-14
+PACSAT
+LUSAT
+OSCAR-20
+OSCAR-22
+ITAMSAT
+OSCAR-27
+OSCAR-29
+OSCAR-40
+OSCAR-41
+OSCAR-49
+OSCAR-50
+RS-15
+RS-20
+PCSAT
+NOAA-14
+NOAA-15
+NOAA-17
+UARS
+HUBBLE
+ISS
+
+Description: Names are returned as a string that must be parsed by the
+client to pull out individual names.  NOTE!!!  Versions of PREDICT prior
+to 2.1.3 returned ONLY ONE name at a time, and had to be invoked 24 times
+to download the entire list.  This has since changed!  Since satellite
+names returned by PREDICT are no longer abbreviated (as they were in
+earlier versions), a 625 byte buffer is now required to store the
+results of this command.
+
+-----------------------------------------------------------------------------
+
+Command: RELOAD_TLE
+Argument: none
+Purpose: To force a re-read of PREDICT's orbital database file.
+Return value: NULL
+Example: RELOAD_TLE
+Data returned:
+Description: Forces PREDICT to re-read the orbital database file.  Useful
+after the database has been updated by something other than the running
+version of the program (i.e. predict -u filename), and eliminates the
+need to re-start PREDICT under these conditions to force a re-read of
+the database.
+
+-----------------------------------------------------------------------------
+
+Command: GET_VERSION
+Argument: none
+Purpose: To determine what version of PREDICT is running as a server.
+Return value: String containing the version number.
+Example: GET_VERSION
+Data returned: 2.2.2\n
+Description: Allows clients to determine what version of PREDICT they're
+talking to.
+
+-----------------------------------------------------------------------------
+
+Command: GET_QTH
+Argument: none
+Purpose: To determine the groundstation location (QTH) information.
+Return value: String containing the info stored in the user's predict.qth file.
+Example: GET_QTH
+Data returned:
+ 
+W1AW
+41.716905
+72.727083
+25
+
+Description: The groundstation callsign, latitude, longitude, and altitude
+above sea level are returned.  Useful for plotting the user's location on
+a map.
+
+-----------------------------------------------------------------------------
+
+Command: GET_TLE
+Argument: satellite name or catalog number
+Purpose: To read the Keplerian elements for a particular satellite.
+Return value: String containing NASA Two-Line Keplerian orbital data.
+Example: GET_TLE OSCAR-27
+Data returned:
+
+OSCAR-27
+1 22825U 93061C   03 59.55562140  .00000055  00000-0  38039-4 0  4973
+2 22825  98.2745  88.7439 0007588 226.4709 133.5846 14.28945788491306
+
+Description: The satellite's Keplerian orbital data in the standard
+NASA Two-Line element format.
+
+-----------------------------------------------------------------------------
+
+Command: GET_TIME
+Argument: none
+Purpose: To read the system date/time from the PREDICT server.
+Return value: Number of seconds since midnight UTC on January 1, 1970.
+Example: GET_TIME
+Data returned:
+
+1046998422
+
+Description: Unix Time is returned by the server.  This command allows
+clients to display clock/calendar information or sync their system
+clocks with that of the server.
+
+-----------------------------------------------------------------------------
+
+Command: GET_TIME$
+Argument: none
+Purpose: To read the system date/time from the PREDICT server.
+Return value: UTC Date/Time as an ASCII string.
+Example: GET_TIME$
+Data returned:
+
+Fri Mar 07 00:53:42 2003
+
+Description: Returns an ASCII representation of the current date/time
+in UTC.  Useful for displaying the current date/time in client applications
+if the local system clock cannot be synced using the GET_TIME command.
+
+-----------------------------------------------------------------------------
+
+Command: GET_SAT_POS
+Argument: satellite name or object number, starting date/time, ending
+date/time (optional).
+Purpose: To obtain the location of a satellite at a specified date/time.
+Return value: Sub-satellite point and local azimuth and elevation headings.
+Example: GET_SAT_POS "OSCAR-7" 1046998422 +10m
+Data returned:
+
+1046998422 Fri 07Mar03 00:53:42  -50  165  175  -64   39  11488  29525 *
+1046998482 Fri 07Mar03 00:54:42  -48  165  177  -61   42  11253  29525 *
+1046998542 Fri 07Mar03 00:55:42  -46  165  180  -58   45  11011  29525 *
+1046998602 Fri 07Mar03 00:56:42  -44  165  182  -55   47  10760  29525 *
+1046998662 Fri 07Mar03 00:57:42  -42  165  184  -53   49  10501  29525 *
+1046998722 Fri 07Mar03 00:58:42  -40  165  186  -50   51  10234  29525 *
+1046998782 Fri 07Mar03 00:59:42  -38  166  189  -47   53   9959  29525 *
+1046998842 Fri 07Mar03 01:00:42  -36  166  191  -44   54   9678  29525 *
+1046998902 Fri 07Mar03 01:01:42  -34  166  193  -41   56   9389  29525 *
+1046998962 Fri 07Mar03 01:02:42  -32  166  195  -38   57   9094  29525 *
+1046999022 Fri 07Mar03 01:03:42  -30  167  197  -35   58   8792  29525 *
+
+Description: The date/time in Unix format (the number of seconds since
+midnight UTC on January 1, 1970), the date/time in ASCII (UTC), the
+elevation of the satellite in degrees, the azimuth heading of the
+satellite, the orbital phase (modulo 256), the latitude (N) and
+longitude (W) of the satellite's sub-satellite point at the time
+specified, the slant range to the satellite in kilometers with
+respect to the ground station's location, and the spacecraft's
+sunlight visibility information.
+
+If the ending time is omitted, only a single line of data is returned.
+If the starting time is omitted, the current date/time is assumed.  If
+the starting date/time is replaced by a number (n) preceded by a '+'
+symbol (ie. +10), output is produced starting at the current date/time,
+and ending the current date/time plus 'n' seconds.  If an 'm' is
+appended to the ending time (+10m or 1003537367m as shown above),
+then the data produced corresponds to the position of the satellite
+every minute for 'n' minutes.
+
+When multiple lines of data are generated, they are returned a line
+at a time rather than as a single string containing the entire output
+(as is the case with most other socket commands).  As a result, the
+socket connection must remain open, and data must be read a line at
+a time until an end-of-data condition is reached.  An end-of-data
+condition is identified upon reception of a control-Z character
+by the client.
+
+-----------------------------------------------------------------------------
+
+Command: PREDICT
+Argument: satellite name or object number, starting date/time (optional).
+Purpose: To obtain orbital predictions for a single pass starting at the
+specified date/time, or earlier if the satellite is already in range.
+Return value: Satellite orbital prediction information.
+Example: PREDICT UARS 1046998422
+Data returned:
+
+1047002067 Fri 07Mar03 01:54:27    0  310  248   52  103   2733  62819 +
+1047002148 Fri 07Mar03 01:55:49    5  307  252   49   97   2195  62819 +
+1047002230 Fri 07Mar03 01:57:11   13  302  255   46   91   1676  62819 +
+1047002310 Fri 07Mar03 01:58:31   23  292    3   43   86   1207  62820  
+1047002386 Fri 07Mar03 01:59:47   37  268    6   40   82    871  62820  
+1047002452 Fri 07Mar03 02:00:53   43  224    9   37   78    782  62820  
+1047002513 Fri 07Mar03 02:01:53   34  190   12   34   75    926  62820  
+1047002581 Fri 07Mar03 02:03:02   21  171   15   31   72   1253  62820  
+1047002658 Fri 07Mar03 02:04:18   12  162   18   27   69   1705  62820  
+1047002738 Fri 07Mar03 02:05:38    5  157   22   23   66   2216  62820  
+1047002819 Fri 07Mar03 02:07:00    0  154   25   19   63   2749  62820  
+
+Description: The date/time in Unix format (the number of seconds since
+midnight UTC on January 1, 1970), the date/time in ASCII (UTC), the
+elevation of the satellite in degrees, the azimuth heading of the
+satellite, the orbital phase (modulo 256), the latitude (N) and
+longitude (W) of the satellite's sub-satellite point at the time
+specified, the slant range to the satellite in kilometers with
+respect to the ground station's location, and the spacecraft's
+sunlight visibility information.
+
+If the starting time is omitted, the current date/time is assumed.
+If a pass is already in progress at the starting date/time specified,
+orbital calculations are moved back to the beginning of AOS of the
+current pass, and data for the entire pass from AOS to LOS is
+provided.
+
+As in the case of the GET_SAT_POS command, prediction information is
+returned a line at a time, not as as a single string containing the
+entire output of the command.  As a result, the socket connection must
+remain open between server and client, and data must be read a line
+at a time until an end-of-data condition is reached.  An end-of-data
+condition is identified upon reception of a control-Z character
+by the client.
+
+-----------------------------------------------------------------------------
+
+Command: GET_MODE
+Argument: none
+Purpose: To determine PREDICT's current tracking mode.
+Return value: String containing program mode information.
+Example: GET_MODE
+Data returned:
+
+OSCAR-11\n
+
+Description: GET_MODE returns the string "MULTI\n" if PREDICT is currently
+operating in Multi-Satellite tracking mode.  A list of available satellites
+can then be obtained through use of the GET_LIST command.  If PREDICT
+is operating in Single Satellite tracking mode, then the name of the
+satellite currently being tracked is returned followed by a '\n' character.
+If PREDICT is not currently tracking satellites, then "NONE\n" is returned.
+

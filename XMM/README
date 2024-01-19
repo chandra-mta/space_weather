@@ -1,0 +1,243 @@
+##########################################
+REALTIME XMM-NEWTON RADIATION OBSERVATIONS
+##########################################
+
+This directory holds scripts related to XMM real time radiation observation
+page http://cxc.cfa.harvard.edu/mta/RADIATION/XMM/index.html.
+
+
+get_data
+--------
+The control script to run all related script. Two idl environment settings are done here.
+This also copies /stage/xmmops_ftp/radmon_02h.dat to the local directory
+
+crmreg_cxo (see: crmreg_cxo.f)
+--------------------------------
+Convert Chandra ECI linear coords to GSE, GSE coords.
+
+Input:
+    cxo.gsme_in_Re (copied by copy_cxo_data.perl---see below)
+
+Output:
+    crmreg_cxo.dat
+
+How to compile crmreg_cxo:
+    f77 crmreg_cxo.f 
+        /data/mta4/proj/rac/ops/CRM3/RUNCRM/geopack/geopack.f
+        /data/mta4/proj/rac/ops/CRM3/RUNCRM/geopack/supple.f  -o crmreg_cxo
+
+As for geopack, see: /data/mta4/proj/rac/ops/CRM3/RUNCRM/geopack/GEOPACK.f
+
+
+crmreg_xmm (see: crmreg_xmm.f)
+--------------------------------
+Convert XMM ECI linear coords to GSE, GSE coords.
+
+Input:
+    /proj/rac/ops/ephem/TLE/xmm.gsme_in_Re
+Output:
+    ./crmreg_xmm.dat
+
+copy_cxo_data.perl
+------------------
+Copy /proj/rac/ops/ephem/TLE/cxo.gsme_in_Re to the local directory and
+remove none data part so that scripts which use this data  won't choke.
+
+update.pro
+----------
+Run all idl scripts.
+
+mta_plot_xmm.pro
+----------------
+Create XMM radiation plot (/data/mta4/www/RADIATION/XMM/mta_xmm_plot.gif).
+
+Input:
+    ./xmm_7day.archive2 (will be updated by this script)
+    ./radmon_02h_curr.dat
+
+Output:
+    ./xmm_7day.archive2
+    ./xmm.archive
+    /data/mta4/www/RADIATION/XMM/xmm_2day.dat
+    /data/mta4/www/RADIATION/XMM/mta_xmm_plot.gif
+
+mta_plot_xmm_tle.pro
+--------------------
+Called by mta_plot_xmm.pro to create XMM ephemeris plot
+
+Input:
+    /proj/rac/ops/ephem/TLE/xmm.spctrk
+Output:
+    create xmm altitude plot in /data/mta4/www/RADIATION/XMM/mta_xmm_plot.gif
+
+mta_plot_xmm_crm.pro
+--------------------
+Called by mta_plot_xmm.pro to create XMM and CXO crmregion plot
+
+Input:
+    ./crmreg_xmm.dat
+    ./crmreg_cxo.dat
+Output:
+    create XMM and CXO crmregion plot in /data/mta4/www/RADIATION/XMM/mta_xmm_plot.gif
+
+
+mta_plot_xmm_gsm.pro
+--------------------
+Plot xmm/cxo ephemeris
+This script needs to access /home/mta/IDL/cxform-0.71 and 
+the following environment setting is required:
+
+    setenv IDL_DLM_PATH "/home/mta/IDL/CXFORM:<IDL_DEFAULT>"
+
+Input:
+    /data/mta4/proj/rac/ops/ephem/TLE/xmm.spctrk    --- xmm orbit information
+    /data/mta4/proj/rac/ops/ephem/TLE/cxo.spctrk    --- cxo orbit information
+    ./crmreg_xmm.dat                                --- xmm crm 
+    ./crmreg_cxo.dat                                --- cxo crm
+
+Output:
+    /data/mta4/www/RADIATION/XMM/mta_xmm_plot_gsm.gif
+    /data/mta4/www/RADIATION/XMM/time_x.gif
+    /data/mta4/www/RADIATION/XMM/time_y.gif
+    /data/mta4/www/RADIATION/XMM/time_z.gif
+
+cxform.so
+---------
+An IDL/C library to convert between spacecraft coordinate systems
+located in: /home/mta/IDL/CXFORM
+Note:
+    cxform-manual.c contains hard-wired data for IGRF coefficients
+    (see function: epsilon line around 320) and
+    these data (g 01, g 11, h11) must be updated regularly.
+    The current data is valid till the end of 2015 based on 
+    12th generation of the data table found in:
+    http://www.ngdc.noaa.gov/IAGA/vmod/igrf.html
+
+mta_plot_xmm_comp.pro
+---------------------
+Plot XMM Radiation and Oribtal Profile. 
+
+Input:
+    xmm_7day.archive2
+    /proj/rac/ops/ephem/TLE/xmm.spctrk
+    /proj/rac/ops/ephem/TLE/cxo.spctrk
+    ./crmreg_cxo.dat
+
+Output:
+    /data/mta4/www/RADIATION/XMM/mta_plot_xmm_comp.gif
+
+mta_xmm_db.pro
+--------------
+Update XMM Database.
+
+The data column names:
+time le0 le1 le2 hes0 hes1 hes2 hec r_sec r_eci x_eci y_eci z_eci vx vy vz
+
+Input:
+    ./xmm_7day.archive2
+    /proj/rac/ops/ephem/TLE/xmm.spctrk
+Output:
+    ./mta_xmm_db.dat
+
+xmm_time.pro
+------------
+Given string arr of xmm_rad time format 'yyyy-doy-dd-hh:mm:ss'
+convert to seconds since Jan 1, 1998
+
+Usage: time_sec=xmm_time(time_stamp)
+
+cxtime.pro
+----------
+convert time from from_form to to_form
+ valid forms are: 'cal' - calendar date
+                           as input has FITS form yyyy-mm-ddThh:mm:ss
+                           as output has form yyyy-MonDD-hh:mm
+                  'sec' - seconds since 1998:001:00:00:00
+                  'met' - mission elapsed time (days since 1999:204:04:31 UT)
+                  'doy' - day of year 
+                           as input has form yyyy:doy:hh:mm:ss
+                           as output has form doy
+ if forms are not specified, 'sec' to 'met' is assumed
+     (allows easy replacement of old sdom function)
+
+ EXAMPLES:
+    print, cxtime('2001-12-05T00:00:00', 'cal','met')
+    ;       865.81181
+    print, cxtime('2001-12-05T00:00:00', 'cal','sec')
+    ;   1.2389760e+08
+    print, cxtime(1.2389760e+08, 'sec','cal')
+    ;    2001-Dec04-23:59
+
+    ;  Yes, it will do arrays:
+    met_dates=[860.1,861.1,862.1,862.6]
+    print, cxtime(met_dates, 'met', 'cal')
+    ;    2001-Nov29-06:54     2001-Nov30-06:54     2001-Dec01-06:54     
+         2001-Dec01-18:54
+    print, cxtime(120000000, 'sec', 'met')
+    ;    820.701
+    print, cxtime(120000000)
+    ;    820.701
+
+
+date2es.pro
+-----------
+Function to convert a standard calendar date into ephemeris seconds before
+or after J2000.  Similar to Ephemeris Time/TDT, but disregards leap seconds
+introduced in 1972.
+
+CALLING SEQUENCE:
+  es = date2es(month,day,year)
+    OR
+  es = date2es(month,day,year,hour,minute,second)
+
+INPUTS:
+  month, day, year: desired month, day, and year to convert
+     (MM,    DD,  YYYY)
+
+  Note that arrays are permitted, provided they're all the same length
+
+OPTIONAL INPUTS:
+  hour, minute, second: if included, the desired hour, minute, and second
+    of the specified day
+
+OUTPUTS:
+  es: The number of ephemeris seconds with respect to J2000, January 1,
+    2000 12:00:00, stored as a long integer.  An array of times are
+    returned if an array is used as input.
+
+  returns -1 if an error has occurred
+
+EXAMPLE:
+  ; Get the number of ephemeris seconds at 10/15/1987, 14:05:00 UTC
+  es = date2es(10,15,1987,14,05,00)
+
+RESTRICTIONS / NOTES:
+  This routine is a quick replacement for the SPICE library function
+  STR2ET.  Another routine, date2et is available that does take leap
+  seconds into account.
+
+  Note that this routine does not check for out-of-range input errors,
+  so unpredictable results may occur (GIGO).
+
+  Also note that this routine needs to be tested for complete accuracy
+  for use with Ryan Boller's CXFORM package.
+
+
+have_license.pro
+-----------------
+do a simple test to see if we are running with an IDL license or in demo mode
+
+mta_check_xmm.pro
+-----------------
+
+
+check_mta_xmm_alert_page.py
+---------------------------
+check the latest count Il count rate and xmm orbital altitude and
+send out warning if mta_XMM_alert file does not exist.
+
+Cron job
+--------
+mta @ boba-v
+1 * * * *  cd /data/mta4/space_weather/XMM ; perl /data/mta4/space_weather/XMM/copy_cxo_data.perl >> $HOME/Logs/xmm_copy_cxo_data.cron
+5,15,25,35,45,55 * * * * cd /data/mta4/space_weather/XMM ; ./check_mta_xmm_alert_page.py > $HOME/Logs/xmm_alert_page_check.cron 2>&1

@@ -1,0 +1,29 @@
+############################
+ACE P3 Restimated trend plot
+############################
+
+NOTE: It seems that output of this script is not used anymore in /data/mta4/www/ace.html
+      Currently the page is pointing to: /mta_ace_plot.gif.
+
+
+
+mta_ace.pro                 --- control idl script
+mta_plot_ace_p3.pro         --- main script to create acd p3 plot
+
+
+Input:
+    /data/mta4/proj/rac/ops/ACE/ace.archive
+    ./ace_7day.archive
+
+Output:
+    ./ace_7day.archive              ---- updated version
+    /data/mta4/www/mta_ace_plot_P3.gif
+
+
+Cron job 
+--------
+mta @ r2d2-v
+
+2,15,30,45 * * * *       cd /data/mta4/space_weather/ACE;  /usr/local/bin/idl mta_ace   >> $HOME/Logs/ace_p3_plot.cron          2>&1
+1 * * * *                cd /data/mta4/space_weather/ACE;  /usr/local/bin/idl mta_fast   > $HOME/Logs/ace_p3_plot_fast.cron     2>&1
+

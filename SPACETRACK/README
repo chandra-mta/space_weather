@@ -1,0 +1,33 @@
+Test area for code to propagate 2-line element ephemeris data
+
+Robert Cameron
+May 2004
+
+See spacetrk.pdf for documentation, code and code test results.
+
+Fortran code taken from CelesTrak www site: 
+http://celestrak.com/NORAD/documentation/
+
+2-line element (TLE) ephemeris data for Chandra and XMM
+available at
+http://celestrak.com/NORAD/elements/science.txt
+
+foo.f is working code
+
+the executable is "foo", which is compiled with
+f77 foo.f -o foo
+
+Sample inputs are in test.dat, which are the test cases
+shown in the documentation in spacetrk.pdf
+Only the models SGP, SGP4, SGP8 are working.
+The models SDP4 and SDP8 do not work. I don't know why yet.
+Also the results from SGP, SGP4 and SGP8 only agree with
+the documented expected results to about 6 or 7 sig digits.
+But since the documented results are from FORTRAN on an
+old computer (pre-IEEE floating point?), and it's single
+precision code, I'm not too worried.
+
+IDL procedure compare.pro
+does comparison plots between foo output (in fort.16)
+and CXC predicted ephemeris PE.EPH.dat
+Plots are shown in comp.ps

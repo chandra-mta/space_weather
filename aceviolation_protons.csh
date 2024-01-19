@@ -37,15 +37,15 @@ set block = "/data/mta4/www/Snapshot/.scs107alert"
         echo "The ACIS on-call person should review the data and call a telecon if necessary. " >> $lock
         echo "This message sent to sot_ace_alert" >> $lock
         #cat $lock | mailx -s "ACE_p3 telecon now" sot_red_alert
-        #cat $lock | mailx -s "ACE_p3 " sot_red_alert
-        cat $lock | mailx -s "ACE_p3 " sot_ace_alert
+        #cat $lock | mailx -s "ACE_p3 " sot_red_alert@cfa.harvard.edu
+        cat $lock | mailx -s "ACE_p3 " sot_ace_alert@cfa.harvard.edu
         #cat $lock | mailx -s "ACE_p3 telecon now" 6172573986@mobile.mycingular.com
       endif
       if ( -s $block) then
         echo "This message sent to sot_yellow_alert" >> $lock
-        cat $lock | mailx -s ACE_p3 sot_yellow_alert
+        cat $lock | mailx -s ACE_p3 sot_yellow_alert@cfa.harvard.edu
       endif
-      #cat $lock | mailx -s ACE_p3_test brad 
+      #cat $lock | mailx -s ACE_p3_test msobolewska@cfa.harvard.edu 
     endif
 
 #end
